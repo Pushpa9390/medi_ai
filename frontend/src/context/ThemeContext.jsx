@@ -7,6 +7,8 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     const root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+    // Keep class for legacy compatibility
     if (theme === 'light') {
       root.classList.add('light');
     } else {

@@ -5,9 +5,43 @@ import { useLanguage } from '../context/LanguageContext';
 import { AlertOctagon, PhoneCall, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export default function EmergencyBanner() {
+const LOC_TEXT = {
+  en: {
+    title: 'Emergency Detected!',
+    call: 'Call 112 / 911',
+    guide: 'Emergency Contacts & Guide'
+  },
+  te: {
+    title: 'అత్యవసర పరిస్థితి కనుగొనబడింది!',
+    call: '112 / 911 కి కాల్ చేయండి',
+    guide: 'అత్యవసర పరిచయాలు & గైడ్'
+  },
+  hi: {
+    title: 'आपातकाल का पता चला!',
+    call: '112 / 911 पर कॉल करें',
+    guide: 'आपातकालीन संपर्क और गाइड'
+  },
+  ta: {
+    title: 'அவசரநிலை கண்டறியப்பட்டது!',
+    call: '112 / 911 ஐ அழைக்கவும்',
+    guide: 'அவசர தொடர்புகள் மற்றும் வழிகாட்டி'
+  },
+  kn: {
+    title: 'ತುರ್ತು ಪರಿಸ್ಥಿತಿ ಪತ್ತೆಯಾಗಿದೆ!',
+    call: '112 / 911 ಗೆ ಕರೆ ಮಾಡಿ',
+    guide: 'ತುರ್ತು ಸಂಪರ್ಕಗಳು ಮತ್ತು ಮಾರ್ಗದರ್ಶಿ'
+  },
+  ml: {
+    title: 'അടിയന്തിരാവസ്ഥ കണ്ടെത്തി!',
+    call: '112 / 911 എന്ന നമ്പറിലേക്ക് വിളിക്കുക',
+    guide: 'അടിയന്തര കോൺടാക്റ്റുകളും ഗൈഡും'
+  }
+};
+
+const EmergencyBanner = React.memo(function EmergencyBanner() {
   const { isEmergency, emergencyMessage, clearEmergency } = useEmergency();
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const text = LOC_TEXT[language] || LOC_TEXT.en;
 
   return (
     <AnimatePresence>
@@ -18,7 +52,7 @@ export default function EmergencyBanner() {
           exit={{ opacity: 0, y: -50 }}
           style={{
             position: 'fixed',
-            top: '84px',
+            top: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 999,
@@ -29,7 +63,7 @@ export default function EmergencyBanner() {
           <div className="emergency-banner" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', color: 'white', borderRadius: '12px', boxShadow: '0 10px 30px rgba(239, 68, 68, 0.4)' }}>
             <AlertOctagon size={24} style={{ marginTop: '0.15rem', flexShrink: 0, color: '#f87171' }} />
             <div style={{ flexGrow: 1 }}>
-              <h4 style={{ fontWeight: 700, fontSize: '1.05rem', margin: '0 0 0.25rem 0' }}>Emergency Detected!</h4>
+              <h4 style={{ fontWeight: 700, fontSize: '1.05rem', margin: '0 0 0.25rem 0' }}>{text.title}</h4>
               <p style={{ fontSize: '0.9rem', margin: '0 0 0.75rem 0', opacity: 0.9 }}>
                 {emergencyMessage}
               </p>
@@ -48,7 +82,7 @@ export default function EmergencyBanner() {
                   }}
                 >
                   <PhoneCall size={14} />
-                  Call 112 / 911
+                  {text.call}
                 </a>
                 <Link
                   to="/emergency"
@@ -64,7 +98,7 @@ export default function EmergencyBanner() {
                     fontWeight: 600,
                   }}
                 >
-                  Emergency Contacts & Guide
+                  {text.guide}
                 </Link>
               </div>
             </div>
@@ -89,4 +123,6 @@ export default function EmergencyBanner() {
       )}
     </AnimatePresence>
   );
-}
+});
+
+export default EmergencyBanner;

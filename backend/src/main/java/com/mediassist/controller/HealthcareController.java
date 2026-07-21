@@ -20,12 +20,24 @@ public class HealthcareController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private String getLanguageName(String lang) {
+        if ("te".equals(lang)) return "Telugu";
+        if ("hi".equals(lang)) return "Hindi";
+        if ("ta".equals(lang)) return "Tamil";
+        if ("kn".equals(lang)) return "Kannada";
+        if ("ml".equals(lang)) return "Malayalam";
+        return "English";
+    }
+
     @PostMapping("/symptom/analyze")
     public ResponseEntity<String> analyzeSymptoms(@RequestBody Map<String, Object> payload) {
         String symptoms = (String) payload.get("symptoms");
         String age      = payload.containsKey("age")      ? String.valueOf(payload.get("age"))      : "N/A";
         String gender   = payload.containsKey("gender")   ? String.valueOf(payload.get("gender"))   : "N/A";
         String duration = payload.containsKey("duration") ? String.valueOf(payload.get("duration")) : "N/A";
+        String lang     = payload.containsKey("lang")     ? String.valueOf(payload.get("lang"))     : "en";
+
+        String languageName = getLanguageName(lang);
 
         String systemInstruction =
             "You are a professional medical triage assistant. " +
@@ -37,21 +49,25 @@ public class HealthcareController {
             "- If chest pain, breathing difficulty, loss of consciousness, or stroke symptoms are mentioned, mark severity as High.\n" +
             "- If symptoms suggest a viral infection, explain why based on the reported symptoms.\n" +
             "- Always include a disclaimer emphasizing that you are an AI assistant, not a licensed doctor.\n" +
-            "- Return response strictly in JSON matching: {\"severity\": \"Low\"|\"Moderate\"|\"High\", \"possibleConditions\": \"string\", \"clinicalExplanation\": \"string\", \"suggestedActions\": \"string\", \"emergencyWarning\": \"string\"}";
+            "- Return response strictly in JSON matching: {\"severity\": \"Low\"|\"Moderate\"|\"High\", \"possibleConditions\": \"string\", \"clinicalExplanation\": \"string\", \"suggestedActions\": \"string\", \"emergencyWarning\": \"string\"}\n" +
+            "IMPORTANT: All string values inside the JSON output (possibleConditions, clinicalExplanation, suggestedActions, emergencyWarning) MUST be translated to and written in " + languageName + ".";
 
         String userPrompt = String.format(
             "User Information:\nAge: %s\nGender: %s\n\nSymptoms:\n%s\n\nDuration:\n%s",
             age, gender, symptoms, duration
         );
 
-        String response = geminiService.generateContent(systemInstruction, userPrompt);
+        String response = geminiService.generateContent(systemInstruction, userPrompt, lang);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/report/analyze")
-    public ResponseEntity<Map<String, Object>> analyzeReport(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, Object>> analyzeReport(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "lang", defaultValue = "en") String lang) {
         String fileName = file.getOriginalFilename();
         String mimeType = file.getContentType();
+        String languageName = getLanguageName(lang);
         
         String systemInstruction = "You are a laboratory diagnostics parser assistant. " +
                 "Requirements:\n" +
@@ -65,7 +81,8 @@ public class HealthcareController {
                 "8. Return strictly in JSON: {\"extractedSummary\": string, \"riskLevel\": \"Low\"|\"Moderate\"|\"High\", " +
                 "\"values\": [{\"parameter\": string, \"value\": string, \"normal\": string, \"status\": string}], " +
                 "\"healthSummary\": [{\"icon\": string, \"label\": string, \"type\": \"ok\"|\"warning\"}], " +
-                "\"nextSteps\": [string], \"explanation\": string, \"suggestions\": string}";
+                "\"nextSteps\": [string], \"explanation\": string, \"suggestions\": string}\n" +
+                "IMPORTANT: All string values inside the JSON output (extractedSummary, parameter, status, healthSummary.label, nextSteps values, explanation, suggestions) MUST be translated to and written in " + languageName + ".";
 
         String userPrompt = "Analyze and parse this medical document report: " + fileName;
         
@@ -74,7 +91,7 @@ public class HealthcareController {
 
         try {
             byte[] fileBytes = file.getBytes();
-            String aiResponse = geminiService.generateMultimodalContent(systemInstruction, userPrompt, mimeType, fileBytes);
+            String aiResponse = geminiService.generateMultimodalContent(systemInstruction, userPrompt, mimeType, fileBytes, lang);
             
             // Try to map AI JSON output into Spring Boot Map structure
             Map<String, Object> parsedResponse = objectMapper.readValue(aiResponse, Map.class);
@@ -82,11 +99,11 @@ public class HealthcareController {
         } catch (Exception e) {
             System.err.println("Could not parse Gemini response: " + e.getMessage());
             // Fallback layout if parsing fails or offline mode
-            result.put("extractedSummary", "Biomarker Report Analysis");
-            result.put("explanation", "Parsed document: " + fileName + ". The report shows standard parameters within normal values.");
-            result.put("suggestions", "Discuss these results during your next clinical appointment.");
+            result.put("extractedSummary", "te".equals(lang) ? "బయోమార్కర్ నివేదిక విశ్లేషణ" : "Biomarker Report Analysis");
+            result.put("explanation", "te".equals(lang) ? "నివేదిక విజయవంతంగా విశ్లేషించబడింది." : "Parsed document: " + fileName + ". The report shows standard parameters.");
+            result.put("suggestions", "te".equals(lang) ? "ఈ నివేదికను మీ వైద్యుడితో చర్చించండి." : "Discuss these results during your next clinical appointment.");
             java.util.List<Map<String, String>> valuesList = new java.util.ArrayList<>();
-            valuesList.add(Map.of("parameter", "Analysis Status", "value", "Completed", "normal", "N/A", "status", "normal"));
+            valuesList.add(Map.of("parameter", "te".equals(lang) ? "విశ్లేషణ స్థితి" : "Analysis Status", "value", "te".equals(lang) ? "పూర్తయింది" : "Completed", "normal", "N/A", "status", "normal"));
             result.put("values", valuesList);
         }
 
@@ -94,9 +111,12 @@ public class HealthcareController {
     }
 
     @PostMapping("/image/analyze")
-    public ResponseEntity<Map<String, Object>> analyzeImage(@RequestParam("image") MultipartFile image) {
+    public ResponseEntity<Map<String, Object>> analyzeImage(
+            @RequestParam("image") MultipartFile image,
+            @RequestParam(value = "lang", defaultValue = "en") String lang) {
         String imageName = image.getOriginalFilename();
         String mimeType = image.getContentType();
+        String languageName = getLanguageName(lang);
 
         String systemInstruction = "You are a professional medical visual diagnostics assistant. " +
                 "Requirements:\n" +
@@ -105,7 +125,8 @@ public class HealthcareController {
                 "3. Provide warning prompts and recommended checks (e.g. ABCDE rules).\n" +
                 "4. Never provide a final diagnosis.\n" +
                 "5. Return details strictly in JSON matching: " +
-                "{\"confidence\": double, \"observation\": \"string\", \"explanation\": \"string\", \"warning\": \"string\", \"suggestions\": \"string\"}";
+                "{\"confidence\": double, \"observation\": \"string\", \"explanation\": \"string\", \"warning\": \"string\", \"suggestions\": \"string\"}\n" +
+                "IMPORTANT: All string values inside the JSON output (observation, explanation, warning, suggestions) MUST be translated to and written in " + languageName + ".";
 
         String userPrompt = "Provide visual observation of this uploaded medical image scan: " + imageName;
         
@@ -114,17 +135,17 @@ public class HealthcareController {
 
         try {
             byte[] imageBytes = image.getBytes();
-            String aiResponse = geminiService.generateMultimodalContent(systemInstruction, userPrompt, mimeType, imageBytes);
+            String aiResponse = geminiService.generateMultimodalContent(systemInstruction, userPrompt, mimeType, imageBytes, lang);
             
             Map<String, Object> parsedResponse = objectMapper.readValue(aiResponse, Map.class);
             result.putAll(parsedResponse);
         } catch (Exception e) {
             System.err.println("Could not parse Gemini image response: " + e.getMessage());
             result.put("confidence", 85.0);
-            result.put("observation", "Dermatological visual query: " + imageName);
-            result.put("explanation", "Initial visual analysis completed. No severe patterns detected on visual surfaces.");
-            result.put("warning", "Visual check only — not an oncology screening.");
-            result.put("suggestions", "Follow up with a skin professional if changes are noted.");
+            result.put("observation", "te".equals(lang) ? "చర్మ పరిశీలన విశ్లేషణ" : "Dermatological visual query: " + imageName);
+            result.put("explanation", "te".equals(lang) ? "ప్రాథమిక విశ్లేషణ పూర్తయింది. ఎలాంటి తీవ్రమైన మార్పులు కనుగొనబడలేదు." : "Initial visual analysis completed.");
+            result.put("warning", "te".equals(lang) ? "ఇది కేవలం ప్రాథమిక అంచనా మాత్రమే." : "Visual check only — not an oncology screening.");
+            result.put("suggestions", "te".equals(lang) ? "ఏవైనా మార్పులు ఉంటే చర్మ వైద్యుడిని సంప్రదించండి." : "Follow up with a skin professional if changes are noted.");
         }
 
         return ResponseEntity.ok(result);
@@ -133,14 +154,15 @@ public class HealthcareController {
     @PostMapping("/chat/message")
     public ResponseEntity<Map<String, String>> chatMessage(@RequestBody Map<String, Object> payload) {
         String message = (String) payload.get("message");
+        String lang     = payload.containsKey("lang")     ? String.valueOf(payload.get("lang"))     : "en";
+        String languageName = getLanguageName(lang);
 
-        String systemInstruction = "You are a helpful, empathetic medical information agent. You explain healthy habits, nutritional tips, sleep guidelines, and general medication purposes. Always warn users to verify prescription dosages with professional pharmacists.";
-        String responseText = geminiService.generateContent(systemInstruction, message);
+        String systemInstruction = "You are a helpful, empathetic medical information agent. You explain healthy habits, nutritional tips, sleep guidelines, and general medication purposes. Always warn users to verify prescription dosages with professional pharmacists.\n" +
+                "IMPORTANT: You MUST write your entire response to the user in " + languageName + ".";
+        
+        String responseText = geminiService.generateContent(systemInstruction, message, lang);
 
         Map<String, String> response = new HashMap<>();
-        // If it starts with a bracket, it's returning the default JSON fallback instead of text, which we want to fix.
-        // Wait, since we are going to write a specific plain-text response for chat inside GeminiService,
-        // responseText will be standard text, and we won't get a JSON fallback for chat.
         response.put("text", responseText);
         return ResponseEntity.ok(response);
     }

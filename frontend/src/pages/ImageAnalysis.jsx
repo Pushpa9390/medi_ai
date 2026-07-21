@@ -1,37 +1,39 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { aiService, saveConsultation } from '../services/api';
-import GlassCard from '../components/GlassCard';
-import FileUpload from '../components/FileUpload';
-import DisclaimerBanner from '../components/DisclaimerBanner';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { Image, ShieldAlert, Sparkles, Percent } from 'lucide-react';
+import { Image, Upload, X, Eye, Scan, Brain, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
+
+const CONFIDENCE_COLORS = confidence => {
+  if (confidence >= 85) return { fill: '#10b981', glow: 'rgba(16,185,129,0.3)' };
+  if (confidence >= 65) return { fill: '#f59e0b', glow: 'rgba(245,158,11,0.3)' };
+  return { fill: '#f43f5e', glow: 'rgba(244,63,94,0.3)' };
+};
 
 export default function ImageAnalysis() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const [imageResult, setImageResult] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [result, setResult] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef();
 
-  const handleFileSelect = async (file) => {
-    // Generate image preview URL
+  const handleFile = async file => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setSelectedFile(file);
     const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-
+    setPreview(url);
     setLoading(true);
-    setImageResult(null);
-
+    setResult(null);
     try {
-      const result = await aiService.analyzeImage(file);
-      setImageResult(result);
-
-      // Save consultation to dashboard history
+      const r = await aiService.analyzeImage(file);
+      setResult(r);
       saveConsultation({
         type: 'Image Analysis',
-        summary: result.observation || 'Skin lesion/Scan analysis',
-        severity: result.confidence < 70 ? 'medium' : 'low',
-        notes: `Analyzed medical image: ${file.name}. AI observation: ${result.observation}. Confidence score: ${result.confidence}%`
+        summary: r.condition || r.diagnosis || 'Medical Image Analyzed',
+        severity: r.riskLevel?.toLowerCase() || 'low',
+        notes: `Analyzed: ${file.name}`
       });
     } catch (err) {
       console.error(err);
@@ -40,182 +42,201 @@ export default function ImageAnalysis() {
     }
   };
 
+  const confidence = result?.confidence ?? result?.aiScore ?? 0;
+  const confColors = CONFIDENCE_COLORS(confidence);
+
+  const clearAll = () => {
+    setSelectedFile(null); setResult(null); setLoading(false);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+  };
+
   return (
     <div className="page-wrapper">
-      <div className="section-container" style={{ paddingBottom: '80px' }}>
-        
-        <DisclaimerBanner style={{ marginBottom: '2rem' }} />
+      <div className="section-container" style={{ paddingBottom: '4rem' }}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="image-grid">
-          
-          {/* File input / Preview Card */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <GlassCard style={{ height: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <Image className="text-sky-400" />
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Visual Diagnostics</h2>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                Upload photos of skin irritation, insect bites, rashes, or scans. The AI detects surface irregularities, calculates statistical confidence metrics, and flags visual warning triggers.
-              </p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+            <div style={{ width: 36, height: 36, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Image size={18} style={{ color: '#10b981' }} />
+            </div>
+            <h1 className="page-heading" style={{ margin: 0 }}>{t('imageAnalysisHeading')}</h1>
+          </div>
+          <p className="page-subheading">{t('imageAnalysisSub')}</p>
+        </motion.div>
 
-              {!previewUrl ? (
-                <FileUpload onFileSelect={handleFileSelect} accept="image/*" />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div
-                    style={{
-                      position: 'relative',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      maxHeight: '320px',
-                      border: '1px solid var(--border-glass)',
-                      background: 'black',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <img
-                      src={previewUrl}
-                      alt="Medical scan preview"
-                      style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain' }}
-                    />
-                    <button
-                      onClick={() => { setPreviewUrl(''); setImageResult(null); }}
-                      style={{
-                        position: 'absolute', top: '0.75rem', right: '0.75rem',
-                        background: 'rgba(0,0,0,0.7)',
-                        border: 'none',
-                        color: 'white',
-                        padding: '0.35rem 0.65rem',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      Clear File
-                    </button>
-                  </div>
-                  {previewUrl && !loading && !imageResult && (
-                    <button onClick={() => handleFileSelect(selectedFile)} className="btn-primary" style={{ justifyContent: 'center' }}>
-                      Re-Analyze Image
-                    </button>
-                  )}
-                </div>
-              )}
-            </GlassCard>
-          </motion.div>
-
-          {/* Results Card */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {loading && (
-              <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '350px' }}>
-                <LoadingSpinner text="Analyzing image pixels, processing edge filters and color variance patterns..." />
-              </GlassCard>
-            )}
-
-            {!loading && !imageResult && (
-              <GlassCard style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '350px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                <Image size={48} className="text-slate-500 mb-3 animate-float" />
-                <h3 style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.25rem' }}>Awaiting Medical Photo</h3>
-                <p style={{ fontSize: '0.85rem', maxWidth: '300px' }}>
-                  Upload a skin photo or scan to review confidence scores, visual findings, and ABCDE monitoring charts.
-                </p>
-              </GlassCard>
-            )}
-
-            {!loading && imageResult && (
-              <GlassCard style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#10b981', marginBottom: '0.5rem' }}>
-                    <Sparkles size={12} /> Visual Scan Completed
-                  </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-                    {imageResult.observation}
-                  </h3>
-                </div>
-
-                {/* Confidence bar meter */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      AI Model Confidence score:
-                    </span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.1rem' }}>
-                      <Percent size={14} /> {imageResult.confidence}%
-                    </span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${imageResult.confidence}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.25rem' }}>
-                    Visual Observations:
-                  </h4>
-                  <p style={{ fontSize: '0.9rem', margin: 0, color: 'var(--text-primary)' }}>
-                    {imageResult.explanation}
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    padding: '1rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    borderColor: 'rgba(239, 68, 68, 0.2)',
-                    borderWidth: '1px',
-                    borderRadius: '12px',
-                    color: '#ef4444',
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    gap: '0.65rem',
-                    alignItems: 'flex-start'
-                  }}
-                >
-                  <ShieldAlert size={18} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
-                  <div>
-                    <h5 style={{ fontWeight: 700, marginBottom: '0.15rem' }}>Visual Scanner Caveat</h5>
-                    <p style={{ margin: 0 }}>{imageResult.warning}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '0.25rem' }}>
-                    Suggested Actions & Checks:
-                  </h4>
-                  <p style={{ fontSize: '0.9rem', margin: 0, color: 'var(--text-primary)' }}>
-                    {imageResult.suggestions}
-                  </p>
-                </div>
-              </GlassCard>
-            )}
-          </motion.div>
-
+        <div className="disclaimer-banner">
+          <Shield size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+          <span>{t('disclaimer_short')}</span>
         </div>
 
-      </div>
+        <div className="image-grid">
+          {/* Upload & Preview */}
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Image size={18} style={{ color: '#10b981' }} /> {t('imageAnalysisTitle')}
+                </h2>
+                {selectedFile && (
+                  <button onClick={clearAll} className="btn-ghost" style={{ padding: '0.35rem 0.6rem', fontSize: '0.78rem' }}>
+                    <X size={13} /> Clear
+                  </button>
+                )}
+              </div>
 
-      <style>{`
-        .image-grid {
-          grid-template-columns: 1fr;
-        }
-        @media (min-width: 1024px) {
-          .image-grid {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-      `}</style>
+              {/* Preview Area */}
+              {preview ? (
+                <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', background: 'var(--bg-glass)' }}>
+                  <img src={preview} alt="Medical image preview"
+                    style={{ width: '100%', maxHeight: 320, objectFit: 'cover', display: 'block' }} />
+                  {loading && (
+                    <div style={{
+                      position: 'absolute', inset: 0, background: 'rgba(6,11,20,0.75)', backdropFilter: 'blur(4px)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem'
+                    }}>
+                      <div className="ai-pulse">
+                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #0ea5e9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Scan size={22} color="white" />
+                        </div>
+                      </div>
+                      <p style={{ color: 'white', fontWeight: 600, fontSize: '0.9rem' }}>{t('analyzingImage')}</p>
+                      <div className="progress-bar" style={{ width: '60%' }}>
+                        <motion.div className="progress-fill"
+                          initial={{ width: '0%' }} animate={{ width: '90%' }}
+                          transition={{ duration: 2.5, ease: 'easeInOut' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className={`upload-zone${dragOver ? ' drag-over' : ''}`}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+                  onClick={() => fileRef.current?.click()}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => handleFile(e.target.files[0])} />
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.5, repeat: Infinity }}>
+                    <div style={{ width: 64, height: 64, margin: '0 auto 1rem', borderRadius: '16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Upload size={28} style={{ color: '#10b981' }} />
+                    </div>
+                  </motion.div>
+                  <p style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Drop medical image here</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>X-ray, MRI, skin, eye images · JPG, PNG</p>
+                </div>
+              )}
+
+              {/* Sample types */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {['X-Ray', 'MRI Scan', 'Skin Lesion', 'Eye Fundus', 'CT Scan'].map(type => (
+                  <span key={type} style={{ padding: '0.25rem 0.65rem', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)', borderRadius: '999px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    {type}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Results */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
+            <AnimatePresence mode="wait">
+              {!result && !loading && (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="glass-card"
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 380, gap: '1rem', textAlign: 'center' }}>
+                  <div className="animate-float" style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Eye size={28} style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: '0.35rem' }}>{t('noImageYet')}</h3>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: 260 }}>{t('noImageYetDesc')}</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {result && (
+                <motion.div key="result" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+                  className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+                  {/* Confidence ring */}
+                  <div style={{ textAlign: 'center', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-glass)' }}>
+                    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                      <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="48" fill="none" stroke="var(--border-glass)" strokeWidth="8" />
+                        <motion.circle cx="55" cy="55" r="48" fill="none"
+                          stroke={confColors.fill} strokeWidth="8"
+                          strokeDasharray={`${2 * Math.PI * 48}`}
+                          strokeDashoffset={`${2 * Math.PI * 48 * (1 - confidence / 100)}`}
+                          strokeLinecap="round" transform="rotate(-90 55 55)"
+                          initial={{ strokeDashoffset: `${2 * Math.PI * 48}` }}
+                          animate={{ strokeDashoffset: `${2 * Math.PI * 48 * (1 - confidence / 100)}` }}
+                          transition={{ duration: 1.2, ease: 'easeOut' }}
+                          style={{ filter: `drop-shadow(0 0 6px ${confColors.glow})` }}
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: confColors.fill, lineHeight: 1 }}>{confidence}%</div>
+                        <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 600 }}>CONFIDENCE</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>AI Diagnostic Confidence</div>
+                  </div>
+
+                  {result.condition && (
+                    <div style={{ padding: '0.875rem', background: 'rgba(16,185,129,0.06)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.3rem' }}>{t('imageCondition')}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#10b981' }}>{result.condition}</div>
+                    </div>
+                  )}
+
+                  {result.diagnosis && (
+                    <div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>{t('imageDiagnosis')}</div>
+                      <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.65 }}>{result.diagnosis}</p>
+                    </div>
+                  )}
+
+                  {result.findings && (
+                    <div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>{t('imageFindings')}</div>
+                      <p style={{ fontSize: '0.88rem', margin: 0, lineHeight: 1.65 }}>{result.findings}</p>
+                    </div>
+                  )}
+
+                  {result.recommendations && (
+                    <div style={{ padding: '0.875rem', background: 'var(--bg-glass)', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>{t('imageRecommendations')}</div>
+                      <p style={{ fontSize: '0.85rem', margin: 0, lineHeight: 1.65, color: 'var(--text-secondary)' }}>{result.recommendations}</p>
+                    </div>
+                  )}
+
+                  {result.riskLevel && (
+                    <div style={{
+                      padding: '0.7rem 0.875rem',
+                      background: result.riskLevel === 'Low' ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
+                      border: `1px solid ${result.riskLevel === 'Low' ? 'rgba(16,185,129,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                      borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      fontSize: '0.85rem', fontWeight: 600,
+                      color: result.riskLevel === 'Low' ? '#10b981' : '#f59e0b'
+                    }}>
+                      {result.riskLevel === 'Low' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
+                      Risk Level: {result.riskLevel}
+                    </div>
+                  )}
+
+                  <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    ⚕️ {t('disclaimer_short')}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

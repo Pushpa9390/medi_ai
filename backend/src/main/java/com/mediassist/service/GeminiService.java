@@ -21,12 +21,12 @@ public class GeminiService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public String generateContent(String systemInstruction, String userPrompt) {
+    public String generateContent(String systemInstruction, String userPrompt, String lang) {
         if ("YOUR_GEMINI_API_KEY_HERE".equals(apiKey) || apiKey.isEmpty() || apiKey.startsWith("${")) {
             if (systemInstruction.contains("triage assistant") || systemInstruction.contains("symptom")) {
-                return getFallbackSymptomResponse(userPrompt);
+                return getFallbackSymptomResponse(userPrompt, lang);
             } else {
-                return getFallbackChatResponse(userPrompt);
+                return getFallbackChatResponse(userPrompt, lang);
             }
         }
 
@@ -78,18 +78,18 @@ public class GeminiService {
 
         // Catch-all fallback
         if (systemInstruction.contains("triage assistant") || systemInstruction.contains("symptom")) {
-            return getFallbackSymptomResponse(userPrompt);
+            return getFallbackSymptomResponse(userPrompt, lang);
         } else {
-            return getFallbackChatResponse(userPrompt);
+            return getFallbackChatResponse(userPrompt, lang);
         }
     }
 
-    public String generateMultimodalContent(String systemInstruction, String userPrompt, String mimeType, byte[] fileData) {
+    public String generateMultimodalContent(String systemInstruction, String userPrompt, String mimeType, byte[] fileData, String lang) {
         if ("YOUR_GEMINI_API_KEY_HERE".equals(apiKey) || apiKey.isEmpty() || apiKey.startsWith("${")) {
             if (systemInstruction.contains("parser assistant") || systemInstruction.contains("report")) {
-                return getFallbackReportResponse(userPrompt);
+                return getFallbackReportResponse(userPrompt, lang);
             } else {
-                return getFallbackImageResponse(userPrompt);
+                return getFallbackImageResponse(userPrompt, lang);
             }
         }
 
@@ -156,15 +156,75 @@ public class GeminiService {
 
         // Catch-all fallback
         if (systemInstruction.contains("parser assistant") || systemInstruction.contains("report")) {
-            return getFallbackReportResponse(userPrompt);
+            return getFallbackReportResponse(userPrompt, lang);
         } else {
-            return getFallbackImageResponse(userPrompt);
+            return getFallbackImageResponse(userPrompt, lang);
         }
     }
 
-    private String getFallbackSymptomResponse(String userPrompt) {
+    private String getFallbackSymptomResponse(String userPrompt, String lang) {
         String lower = userPrompt.toLowerCase();
-        if (lower.contains("chest pain") || lower.contains("heart") || lower.contains("stroke") || lower.contains("breathing difficulty") || lower.contains("loss of consciousness")) {
+        boolean isEmergency = lower.contains("chest pain") || lower.contains("heart") || lower.contains("stroke") || lower.contains("breathing difficulty") || lower.contains("loss of consciousness");
+        boolean isCold = lower.contains("fever") || lower.contains("cough") || lower.contains("flu");
+
+        if ("te".equals(lang)) {
+            if (isEmergency) {
+                return "{" +
+                       "\"severity\": \"High\"," +
+                       "\"possibleConditions\": \"తీవ్రమైన గుండె సంబంధిత సమస్య / శ్వాసకోశ ఇబ్బంది\"," +
+                       "\"clinicalExplanation\": \"మీరు నమోదు చేసిన లక్షణాలు (ఛాతీ నొప్పి, శ్వాస ఆడకపోవడం) ప్రాణాంతక పరిస్థితులను సూచిస్తాయి.\"," +
+                       "\"suggestedActions\": \"దయచేసి నిటారుగా కూర్చోండి, నిశ్శబ్దంగా ఉండండి మరియు ఒంటరిగా ప్రయాణించవద్దు.\"," +
+                       "\"emergencyWarning\": \"⚠️ అత్యవసర హెచ్చరిక: వెంటనే అత్యవసర సేవలకు (108 లేదా 112) కాల్ చేయండి.\"" +
+                       "}";
+            }
+            if (isCold) {
+                return "{" +
+                       "\"severity\": \"Low\"," +
+                       "\"possibleConditions\": \"వైరల్ శ్వాసకోశ ఇన్ఫెక్షన్ (జలుబు/జ్వరం)\"," +
+                       "\"clinicalExplanation\": \"మీ లక్షణాలు (దగ్గు, జ్వరం) సాధారణ వైరల్ జలుబును సూచిస్తాయి.\"," +
+                       "\"suggestedActions\": \"విశ్రాంతి తీసుకోండి, వేడి ద్రవాలు త్రాగండి మరియు జ్వరాన్ని పర్యవేక్షించండి.\"," +
+                       "\"emergencyWarning\": \"తక్షణ అత్యవసర సూచనలు ఏవీ లేవు. జ్వరం తగ్గకపోతే వైద్యుడిని సంప్రదించండి.\"" +
+                       "}";
+            }
+            return "{" +
+                   "\"severity\": \"Moderate\"," +
+                   "\"possibleConditions\": \"సాధారణ లక్షణాల విశ్లేషణ\"," +
+                   "\"clinicalExplanation\": \"ఆఫ్‌లైన్ విశ్లేషణ పూర్తయింది. సాధారణ శారీరక స్పందనగా గుర్తించబడింది.\"," +
+                   "\"suggestedActions\": \"లక్షణాలను గమనించండి, నీరు బాగా త్రాగండి మరియు వైద్యుడిని సంప్రదించండి.\"," +
+                   "\"emergencyWarning\": \"ప్రస్తుతానికి తీవ్రమైన సంకేతాలు ఏవీ కనుగొనబడలేదు.\"" +
+                   "}";
+        }
+
+        if ("hi".equals(lang)) {
+            if (isEmergency) {
+                return "{" +
+                       "\"severity\": \"High\"," +
+                       "\"possibleConditions\": \"संभावित हृदय रोग / तीव्र श्वसन संकट\"," +
+                       "\"clinicalExplanation\": \"आपके लक्षण (सीने में दर्द, सांस लेने में कठिनाई) एक गंभीर आपातकालीन स्थिति का संकेत देते हैं।\"," +
+                       "\"suggestedActions\": \"सीधे बैठें, शांत रहें, और तुरंत चिकित्सा सहायता लें।\"," +
+                       "\"emergencyWarning\": \"⚠️ आपातकालीन चेतावनी: तत्काल आपातकालीन सेवाओं (112 या 102) को कॉल करें।\"" +
+                       "}";
+            }
+            if (isCold) {
+                return "{" +
+                       "\"severity\": \"Low\"," +
+                       "\"possibleConditions\": \"सामान्य वायरल संक्रमण (सर्दी/जुकाम)\"," +
+                       "\"clinicalExplanation\": \"आपके लक्षण (बुखार, खांसी) सामान्य श्वसन वायरल संक्रमण को दर्शाते हैं।\"," +
+                       "\"suggestedActions\": \"आराम करें, गुनगुना पानी पिएं और बुखार की निगरानी करें।\"," +
+                       "\"emergencyWarning\": \"कोई तत्काल आपातकालीन लक्षण नहीं हैं। यदि बुखार बना रहता है तो डॉक्टर से परामर्श लें।\"" +
+                       "}";
+            }
+            return "{" +
+                   "\"severity\": \"Moderate\"," +
+                   "\"possibleConditions\": \"सामान्य लक्षण विश्लेषण (ऑफ़लाइन मोड)\"," +
+                   "\"clinicalExplanation\": \"ऑफ़लाइन विश्लेषण पूरा हो गया है। कोई गंभीर लक्षण नहीं पाए गए हैं।\"," +
+                   "\"suggestedActions\": \"लक्षणों पर नज़र रखें, पानी पिएं और डॉक्टर से सलाह लें।\"," +
+                   "\"emergencyWarning\": \"कोई तत्काल आपातकालीन चेतावनी नहीं है।\"" +
+                   "}";
+        }
+
+        // Default English
+        if (isEmergency) {
             return "{" +
                    "\"severity\": \"High\"," +
                    "\"possibleConditions\": \"Potential Acute Cardiovascular / Acute Respiratory Distress\"," +
@@ -173,8 +233,7 @@ public class GeminiService {
                    "\"emergencyWarning\": \"⚠️ EMERGENCY WARNING: Chest pain, respiratory distress, and stroke-like symptoms represent immediate health hazards. Call emergency response services (112 or 911) right now.\"" +
                    "}";
         }
-        
-        if (lower.contains("fever") || lower.contains("cough") || lower.contains("flu")) {
+        if (isCold) {
             return "{" +
                    "\"severity\": \"Low\"," +
                    "\"possibleConditions\": \"Viral Respiratory Infection (Cold/Flu)\"," +
@@ -183,7 +242,6 @@ public class GeminiService {
                    "\"emergencyWarning\": \"No immediate emergency indicators. Consult a physician if fever remains above 102°F for more than 48 hours.\"" +
                    "}";
         }
-        
         return "{" +
                "\"severity\": \"Moderate\"," +
                "\"possibleConditions\": \"General Symptomatic Presentation (Offline Mode)\"," +
@@ -193,7 +251,51 @@ public class GeminiService {
                "}";
     }
 
-    private String getFallbackReportResponse(String userPrompt) {
+    private String getFallbackReportResponse(String userPrompt, String lang) {
+        if ("te".equals(lang)) {
+            return "{" +
+                   "\"extractedSummary\": \"రక్త కణాల లెక్కింపు (CBC) మరియు విటమిన్ విశ్లేషణ\"," +
+                   "\"riskLevel\": \"Moderate\"," +
+                   "\"values\": [" +
+                   "  {\"parameter\": \"హిమోగ్లోబిన్\", \"value\": \"11.5 g/dL\", \"normal\": \"12.0 - 15.5 g/dL\", \"status\": \"low\"}," +
+                   "  {\"parameter\": \"విటమిన్ డి\", \"value\": \"19 ng/mL\", \"normal\": \"30 - 100 ng/mL\", \"status\": \"deficient\"}," +
+                   "  {\"parameter\": \"తెల్ల రక్త కణాలు\", \"value\": \"6.8 x10^3/uL\", \"normal\": \"4.5 - 11.0 x10^3/uL\", \"status\": \"normal\"}" +
+                   "]," +
+                   "\"healthSummary\": [" +
+                   "  {\"icon\": \"⚠\", \"label\": \"హిమోగ్లోబిన్ పరిమాణం తక్కువగా ఉంది (రక్తహీనత సంకేతం)\", \"type\": \"warning\"}," +
+                   "  {\"icon\": \"⚠\", \"label\": \"తీవ్రమైన విటమిన్ డి లోపం\", \"type\": \"warning\"}" +
+                   "]," +
+                   "\"nextSteps\": [" +
+                   "  \"పాలకూర, ఎర్ర మాంసం మరియు తృణధాన్యాలు వంటి ఐరన్ అధికంగా ఉన్న ఆహారాన్ని తీసుకోండి.\"," +
+                   "  \"వైద్యుని సలహా మేరకు విటమిన్ డి3 సప్లిమెంట్ వాడండి.\"" +
+                   "]," +
+                   "\"explanation\": \"ఈ నివేదిక బోర్డర్‌లైన్ రక్తహీనత మరియు విటమిన్ డి లోపాన్ని సూచిస్తుంది.\"," +
+                   "\"suggestions\": \"ఆహార మార్పులు మరియు విటమిన్ డి సప్లిమెంట్ల కోసం వైద్యుడిని సంప్రదించండి.\"" +
+                   "}";
+        }
+
+        if ("hi".equals(lang)) {
+            return "{" +
+                   "\"extractedSummary\": \"पूर्ण रक्त गणना (CBC) और विटामिन पैनल विश्लेषण\"," +
+                   "\"riskLevel\": \"Moderate\"," +
+                   "\"values\": [" +
+                   "  {\"parameter\": \"हीमोग्लोबिन\", \"value\": \"11.5 g/dL\", \"normal\": \"12.0 - 15.5 g/dL\", \"status\": \"low\"}," +
+                   "  {\"parameter\": \"विटामिन डी\", \"value\": \"19 ng/mL\", \"normal\": \"30 - 100 ng/mL\", \"status\": \"deficient\"}," +
+                   "  {\"parameter\": \"सफेद रक्त कोशिकाएं\", \"value\": \"6.8 x10^3/uL\", \"normal\": \"4.5 - 11.0 x10^3/uL\", \"status\": \"normal\"}" +
+                   "]," +
+                   "\"healthSummary\": [" +
+                   "  {\"icon\": \"⚠\", \"label\": \"हल्का एनीमिया (कम हीमोग्लोबिन) पाया गया\", \"type\": \"warning\"}," +
+                   "  {\"icon\": \"⚠\", \"label\": \"विटामिन डी की कमी पाई गई\", \"type\": \"warning\"}" +
+                   "]," +
+                   "\"nextSteps\": [" +
+                   "  \"आयरन से भरपूर खाद्य पदार्थ जैसे पालक, दालें, और अनाज खाएं।\"," +
+                   "  \"डॉक्टर की सलाह पर विटामिन डी3 सप्लीमेंट लेना शुरू करें।\"" +
+                   "]," +
+                   "\"explanation\": \"रिपोर्ट हीमोग्लोबिन के स्तर में कमी और विटामिन डी की कमी की ओर इशारा करती है।\"," +
+                   "\"suggestions\": \"आहार में सुधार करें और चिकित्सक से विटामिन डी3 के लिए सलाह लें।\"" +
+                   "}";
+        }
+
         return "{" +
                "\"extractedSummary\": \"Complete Blood Count (CBC) and Vitamin Panel Analysis\"," +
                "\"riskLevel\": \"Moderate\"," +
@@ -219,7 +321,27 @@ public class GeminiService {
                "}";
     }
 
-    private String getFallbackImageResponse(String userPrompt) {
+    private String getFallbackImageResponse(String userPrompt, String lang) {
+        if ("te".equals(lang)) {
+            return "{" +
+                   "\"confidence\": 88.5," +
+                   "\"observation\": \"చర్మ పరిశీలన: బెంయిన్ మెలనోసైటిక్ నెవస్ (సాధారణ పుట్టుమచ్చ)\"," +
+                   "\"explanation\": \"దృశ్య పరిశీలనలో సమరూప అంచులు, ఏకరీతి రంగు మరియు చిన్న వ్యాసం (< 6 మిమీ) కనుగొనబడింది. ఇది హానిచేయని సాధారణ పుట్టుమచ్చగా కనిపిస్తోంది.\"," +
+                   "\"warning\": \"⚠️ హెచ్చరిక: AI దృశ్య పరీక్ష వైద్య నిర్ధారణకు సమానం కాదు. పుట్టుమచ్చ పరిమాణంలో మార్పులు వస్తే వెంటనే వైద్యుడిని సంప్రదించండి.\"," +
+                   "\"suggestions\": \"ప్రతినెలా ABCDE నియమాలతో పుట్టుమచ్చ మార్పులను పర్యవేక్షించండి. రోజువారీ సన్‌స్క్రీన్ ఉపయోగించండి.\"" +
+                   "}";
+        }
+
+        if ("hi".equals(lang)) {
+            return "{" +
+                   "\"confidence\": 88.5," +
+                   "\"observation\": \"त्वचा परीक्षण: सौम्य मेलानोसाइटिक नेवस (सामान्य तिल)\"," +
+                   "\"explanation\": \"दृश्य परीक्षण से नियमित सममित सीमाएं, समान रंग और छोटा व्यास (< 6 मिमी) दिखाई देता है। यह सामान्य तिल प्रतीत होता है।\"," +
+                   "\"warning\": \"⚠️ चेतावनी: AI दृश्य मूल्यांकन नैदानिक जाँच का विकल्प नहीं है। यदि तिल का आकार या रंग बदलता है, तो त्वचा रोग विशेषज्ञ से मिलें।\"," +
+                   "\"suggestions\": \"हर महीने ABCDE नियमों का उपयोग करके तिल की निगरानी करें। दैनिक सनस्क्रीन का प्रयोग करें।\"" +
+                   "}";
+        }
+
         return "{" +
                "\"confidence\": 88.5," +
                "\"observation\": \"Dermatological Scan Observation: Benign Melanocytic Nevus (Common Mole)\"," +
@@ -229,11 +351,27 @@ public class GeminiService {
                "}";
     }
 
-    private String getFallbackChatResponse(String message) {
+    private String getFallbackChatResponse(String message, String lang) {
+        if ("te".equals(lang)) {
+            return "నమస్కారం! నేను మీ ఆరోగ్య సమాచార సహాయకుడిని. ఆరోగ్యకరమైన ఆహారం, నిద్ర వేళలు, వ్యాయామం లేదా ఇతర ఆరోగ్య పద్ధతుల గురించి మీరు నన్ను అడగవచ్చు. \n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సహాయకుడిని మాత్రమే, వైద్యుడిని కాను. అత్యవసర పరిస్థితుల్లో వెంటనే నిపుణులను సంప్రదించండి.*";
+        }
+        if ("hi".equals(lang)) {
+            return "नमस्ते! मैं आपका स्वास्थ्य सूचना सहायक हूँ। आप मुझसे स्वस्थ आदतों, पोषण, नींद या सामान्य व्यायामों के बारे में पूछ सकते हैं। \n\n---\n*⚕️ अस्वीकरण: मैं एक AI स्वास्थ्य सूचना सहायक हूँ, चिकित्सक नहीं। आपातकालीन स्थिति में तुरंत डॉक्टर से संपर्क करें।*";
+        }
+        if ("ta".equals(lang)) {
+            return "வணக்கம்! நான் உங்கள் சுகாதார தகவல் உதவியாளர். ஆரோக்கியமான பழக்கங்கள், உணவு, தூக்கம் அல்லது உடற்பயிற்சி பற்றி நீங்கள் என்னிடம் கேட்கலாம். \n\n---\n*⚕️ பொறுப்புத் துறப்பு: நான் ஒரு AI சுகாதார உதவியாளர் மட்டுமே, மருத்துவர் அல்ல.*";
+        }
+        if ("kn".equals(lang)) {
+            return "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಆರೋಗ್ಯ ಮಾಹಿತಿ ಸಹಾಯಕ. ಆರೋಗ್ಯಕರ ಆಹಾರ, ನಿದ್ರೆ ಅಥವಾ ವ್ಯಾಯಾಮದ ಕುರಿತು ನೀವು ನನ್ನನ್ನು ಕೇಳಬಹುದು. \n\n---\n*⚕️ ಹಕ್ಕುತ್ಯಾಗ: ನಾನು AI ಮಾಹಿತಿ ಸಹಾಯಕ ಮಾತ್ರ, ವೈದ್ಯನಲ್ಲ.*";
+        }
+        if ("ml".equals(lang)) {
+            return "നമസ്കാരം! ഞാൻ നിങ്ങളുടെ ആരോഗ്യ വിവര സഹായിയാണ്. ആരോഗ്യകരമായ ശീലങ്ങൾ, ഭക്ഷണം, ഉറക്കം അല്ലെങ്കിൽ വ്യായാമം എന്നിവയെക്കുറിച്ച് നിങ്ങൾക്ക് എന്നോട് ചോദിക്കാം. \n\n---\n*⚕️ നിരാകരണം: ഞാൻ ഒരു AI ആരോഗ്യ വിവര സഹായി മാത്രമാണ്, ഡോക്ടറല്ല.*";
+        }
+
+        // Default English
         String lower = message.toLowerCase();
         StringBuilder response = new StringBuilder();
 
-        // Empathetic and conversational greeting variations
         String[] greetings = {
             "Hello! I am your AI health companion. ",
             "Hi there! Glad to assist you. ",
@@ -243,7 +381,6 @@ public class GeminiService {
 
         boolean matched = false;
 
-        // Keyword checking
         if (lower.contains("diet") || lower.contains("nutrition") || lower.contains("food") || lower.contains("eat") || lower.contains("weight")) {
             matched = true;
             response.append("Regarding your query about diet and nutrition:\n\n");
@@ -283,54 +420,11 @@ public class GeminiService {
             response.append("⚠️ **CRITICAL WARNING**: Always check exact packaging labels and consult a certified pharmacist or physician before taking any medication or altering your prescription dosages.");
         }
 
-        if (lower.contains("stress") || lower.contains("anxiety") || lower.contains("mental") || lower.contains("depress") || lower.contains("worry") || lower.contains("relax")) {
-            if (matched) response.append("\n\n---\n\n");
-            matched = true;
-            response.append("Regarding stress management and mental well-being:\n\n");
-            response.append("• **Mindfulness & Breathing**: Dedicate 5-10 minutes daily to deep-breathing exercises, meditation, or progressive muscle relaxation.\n");
-            response.append("• **Physical Connection**: Stress often triggers muscle tension and sleep disruption. Regular walking or yoga can help lower cortisol levels.\n");
-            response.append("• **Professional Support**: If feelings of anxiety, persistent sadness, or stress begin impacting your daily functions, please reach out to a licensed counselor, therapist, or psychiatrist.");
-        }
-
-        if (lower.contains("vitamin") || lower.contains("supplement") || lower.contains("calcium") || lower.contains("iron") || lower.contains("b12") || lower.contains("deficien")) {
-            if (matched) response.append("\n\n---\n\n");
-            matched = true;
-            response.append("Regarding vitamins and supplements:\n\n");
-            response.append("• **Vitamin D3**: Synthesized via sunlight and found in fatty fish and fortified milk. Essential for bone density and immune function.\n");
-            response.append("• **Vitamin B12**: Primarily found in animal products; essential for nerve health and red blood cell production. Vegetarians and vegans often need supplements.\n");
-            response.append("• **Iron**: Essential for oxygen transport. Take with Vitamin C (e.g. orange juice) to enhance absorption, and avoid taking it with calcium or tea.\n\n");
-            response.append("It is highly recommended to perform a blood panel check before starting high-dose supplement regimens to avoid toxicity.");
-        }
-
-        if (lower.contains("cough") || lower.contains("fever") || lower.contains("cold") || lower.contains("flu") || lower.contains("throat") || lower.contains("covid")) {
-            if (matched) response.append("\n\n---\n\n");
-            matched = true;
-            response.append("Regarding cold, cough, or fever symptoms:\n\n");
-            response.append("• **Hydration**: Drink plenty of warm fluids (herbal teas, warm water, broths) to thin mucus and soothe your throat.\n");
-            response.append("• **Symptomatic Relief**: Steam inhalation and saline gargles can help alleviate congestion and throat soreness.\n");
-            response.append("• **Rest**: Rest is critical to allow your immune system to fight the viral infection.\n\n");
-            response.append("Seek immediate medical evaluation if you experience high fever lasting more than 3 days, difficulty breathing, or severe chest tightness.");
-        }
-
-        if (lower.contains("hello") || lower.contains("hi") || lower.contains("hey") || lower.contains("help") || lower.contains("intro")) {
-            if (matched) response.append("\n\n---\n\n");
-            matched = true;
-            response.append("I am your clinical assistant chatbot. I can provide detailed guidance on healthy lifestyle habits, nutrition suggestions, basic exercise schedules, sleep improvement, and information on common over-the-counter medications.\n\n");
-            response.append("Please feel free to ask about any of these topics!");
-        }
-
-        // If no keyword matches, generate a general helpful response
         if (!matched) {
             response.append("I am here to help you understand healthy lifestyle choices, nutritional guidelines, exercise benefits, and common medication details.\n\n");
-            response.append("It sounds like you have a unique health question. Could you clarify if you are looking for advice on:\n");
-            response.append("1. **Nutrition & Diet** (e.g., foods for vitamin deficiency)\n");
-            response.append("2. **Sleep Hygiene** (e.g., overcoming sleep difficulties)\n");
-            response.append("3. **Medications** (e.g., paracetamol precautions)\n");
-            response.append("4. **Exercise Routines** (e.g., getting started with cardio)\n\n");
-            response.append("Please specify so I can give you the most detailed educational guidelines.");
+            response.append("Please specify a topic like nutrition, sleep hygiene, medication info, or exercise so I can give you detailed educational guidelines.");
         }
 
-        // Standard Clinical Disclaimer appended to all chat fallback responses
         response.append("\n\n---\n");
         response.append("*Disclaimer: I am an AI educational companion, not a licensed medical doctor. For any health concerns, diagnosis, or prescription change, please consult a qualified healthcare professional.*");
 

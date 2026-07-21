@@ -2,88 +2,61 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+const DEFAULT_USER = {
+  id: 'guest-user',
+  name: 'Guest User',
+  email: 'guest@mediassist.ai',
+  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MediAssistGuest',
+  phone: '',
+  dob: '',
+  bloodGroup: '',
+  allergies: '',
+  emergencyContact: '',
+  joinedAt: new Date().toISOString(),
+  medicalHistory: [],
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem('mediassist-user');
-      return stored ? JSON.parse(stored) : null;
+      const parsed = stored ? JSON.parse(stored) : null;
+      // Always ensure a user exists — never return null
+      return parsed || DEFAULT_USER;
     } catch {
-      return null;
+      return DEFAULT_USER;
     }
   });
-
-  const [users, setUsers] = useState(() => {
-    try {
-      const stored = localStorage.getItem('mediassist-users');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('mediassist-users', JSON.stringify(users));
-  }, [users]);
 
   useEffect(() => {
     if (user) {
       localStorage.setItem('mediassist-user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('mediassist-user');
     }
   }, [user]);
 
-  const signup = ({ name, email, password, phone, dob, bloodGroup }) => {
-    const exists = users.find(u => u.email === email);
-    if (exists) {
-      return { success: false, message: 'An account with this email already exists.' };
-    }
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password, // Note: plain text only for demo; use hashing in production
-      phone: phone || '',
-      dob: dob || '',
-      bloodGroup: bloodGroup || '',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(email)}`,
-      joinedAt: new Date().toISOString(),
-      medicalHistory: [],
-      allergies: '',
-      emergencyContact: '',
-    };
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    const { password: _p, ...safeUser } = newUser;
-    setUser(safeUser);
-    return { success: true };
-  };
+  // No-op stubs — kept for compatibility with components that still call these
+  const signup = () => ({ success: true });
+  const login  = () => ({ success: true });
 
-  const login = ({ email, password }) => {
-    const found = users.find(u => u.email === email && u.password === password);
-    if (!found) {
-      return { success: false, message: 'Invalid email or password.' };
-    }
-    const { password: _p, ...safeUser } = found;
-    setUser(safeUser);
-    return { success: true };
+  // Logout resets to guest instead of null — UI never shows sign-in prompts
+  const logout = () => {
+    localStorage.removeItem('mediassist-user');
+    setUser(DEFAULT_USER);
   };
-
-  const logout = () => setUser(null);
 
   const updateProfile = (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
-    // Also update stored users list
-    const updatedUsers = users.map(u =>
-      u.id === user.id ? { ...u, ...updates } : u
-    );
-    setUsers(updatedUsers);
     return { success: true };
   };
 
+  const deleteAccount = () => {
+    localStorage.removeItem('mediassist-user');
+    setUser(DEFAULT_USER);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, signup, login, logout, updateProfile, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

@@ -53,63 +53,138 @@ function getMockHistory() {
 // AI Service API layer (scaffolded to support backend if backend is connected)
 const API_BASE = '/api';
 
+// Simple dictionary of mock fallbacks to return if backend is offline/fails
+const LOCAL_MOCKS = {
+  en: {
+    symptom: {
+      emergency: {
+        isEmergency: true,
+        severity: 'critical',
+        condition: 'Potential Cardiovascular / Acute Distress',
+        explanation: 'Based on the red-flag symptoms provided, you might be experiencing a life-threatening medical emergency. Highly critical condition.',
+        followUp: 'Are you feeling lightheaded, experiencing radiating pain down your arm, or having severe shortness of breath?',
+        suggestions: 'Please do not wait. Call 911 or your local emergency response team right now.'
+      },
+      cold: {
+        isEmergency: false,
+        severity: 'low',
+        condition: 'Common Viral Upper Respiratory Tract Infection',
+        explanation: 'Symptoms align closely with common seasonal viral infections such as a cold or mild influenza.',
+        followUp: 'Do you have a persistent high fever above 101°F, sore throat, or body aches?',
+        suggestions: 'Rest, hydrate, and monitor your temperature. Over-the-counter flu aids can support symptom relief. If fever persists, contact a clinic.'
+      },
+      headache: {
+        isEmergency: false,
+        severity: 'medium',
+        condition: 'Tension Headache or Early Migraine onset',
+        explanation: 'Moderate localized head pressure typical of tension or migraine headaches.',
+        followUp: 'Is the headache accompanied by visual disturbances, nausea, or sensitivity to light?',
+        suggestions: 'Rest in a quiet, dark room, keep hydrated. Consider standard pain relief. Seek immediate care if accompanied by sudden numbness or speech changes.'
+      },
+      general: {
+        isEmergency: false,
+        severity: 'medium',
+        condition: 'General Symptomatic Presentation',
+        explanation: 'Symptoms are noted. A general systemic response has been generated.',
+        followUp: 'Could you elaborate on when these symptoms started and if they occur at specific times?',
+        suggestions: 'Maintain a symptom log, get adequate rest, and schedule a professional general practitioner checkup.'
+      }
+    },
+    report: {
+      extractedSummary: 'Complete Blood Count (CBC) Panel Analysis',
+      explanation: 'The report indicates borderline low Hemoglobin (mild anemia marker) and Vitamin D deficiency. Other standard blood parameters including infection markers (WBC) are within normal boundaries.',
+      suggestions: 'Focus on consuming iron-rich foods (spinach, legumes) and discuss a vitamin D3 supplement with your primary physician.'
+    },
+    image: {
+      observation: 'Dermatological Observation: Benign Melanocytic Nevus (Common Mole)',
+      explanation: 'The uploaded skin lesion exhibits visual symmetry, clear regular borders, uniform coloration, and a diameter under 6mm. These traits typically correlate with standard benign skin moles.',
+      warning: 'This is a preliminary visual indicator only. Do not treat this as a final oncology evaluation.',
+      suggestions: 'Observe the mole using the ABCDE rule monthly. Check if it becomes asymmetrical, develops uneven borders, changes color, grows, or bleeds.'
+    }
+  },
+  te: {
+    symptom: {
+      emergency: {
+        isEmergency: true,
+        severity: 'critical',
+        condition: 'గుండె సంబంధిత / తీవ్రమైన శ్వాసకోశ ఇబ్బంది',
+        explanation: 'మీరు తెలిపిన తీవ్రమైన లక్షణాల ఆధారంగా, ఇది ప్రాణాంతక అత్యవసర పరిస్థితి కావచ్చు.',
+        followUp: 'మీకు తల తిరగడం, చేతికి నొప్పి వ్యాపించడం లేదా శ్వాస తీసుకోవడంలో తీవ్ర ఇబ్బంది ఉందా?',
+        suggestions: 'దయచేసి ఆలస్యం చేయవద్దు. వెంటనే మీ స్థానిక అత్యవసర సేవలకు (108 లేదా 112) కాల్ చేయండి.'
+      },
+      cold: {
+        isEmergency: false,
+        severity: 'low',
+        condition: 'సాధారణ వైరల్ శ్వాసకోశ ఇన్‌ఫెక్షన్',
+        explanation: 'మీ లక్షణాలు సాధారణ జలుబు లేదా తేలికపాటి ఇన్‌ఫ్లుఎంజా వంటి వైరల్ ఇన్‌ఫెక్షన్‌ను సూచిస్తున్నాయి.',
+        followUp: 'మీకు 101°F కంటే ఎక్కువ జ్వరం, గొంతు నొప్పి లేదా ఒంటి నొప్పులు ఉన్నాయా?',
+        suggestions: 'విశ్రాంతి తీసుకోండి, తగినంత నీరు త్రాగండి మరియు మీ జ్వరాన్ని పర్యవేక్షించండి. జ్వరం తగ్గకపోతే డాక్టర్‌ను సంప్రదించండి.'
+      },
+      headache: {
+        isEmergency: false,
+        severity: 'medium',
+        condition: 'టెన్షన్ తలనొప్పి లేదా మైగ్రేన్ ప్రారంభం',
+        explanation: 'టెన్షన్ లేదా మైగ్రేన్ తలనొప్పికి సంబంధించిన మోస్తరు ఒత్తిడి కనిపించింది.',
+        followUp: 'తలనొప్పితో పాటు కంటి చూపు మందగించడం, వికారం లేదా కాంతి పట్ల సున్నితత్వం ఉందా?',
+        suggestions: 'నిశ్శబ్దమైన, చీకటి గదిలో విశ్రాంతి తీసుకోండి, నీరు త్రాగండి. అవసరమైతే తగిన పెయిన్ కిల్లర్ ఉపయోగించండి.'
+      },
+      general: {
+        isEmergency: false,
+        severity: 'medium',
+        condition: 'సాధారణ లక్షణాల ప్రదర్శన',
+        explanation: 'మీరు తెలిపిన లక్షణాలు నమోదు చేయబడ్డాయి. సాధారణ వైద్య సహాయం అందించబడింది.',
+        followUp: 'ఈ లక్షణాలు ఎప్పుడు ప్రారంభమయ్యాయో మరియు ఏ సమయంలో ఎక్కువగా ఉన్నాయో వివరించగలరా?',
+        suggestions: 'లక్షణాల డైరీని మెయింటైన్ చేయండి, తగినంత విశ్రాంతి తీసుకోండి మరియు సాధారణ వైద్యుడిని సంప్రదించండి.'
+      }
+    },
+    report: {
+      extractedSummary: 'కంప్లీట్ బ్లడ్ కౌంట్ (CBC) ప్యానెల్ విశ్లేషణ',
+      explanation: 'ఈ నివేదిక బోర్డర్‌లైన్ తక్కువ హిమోగ్లోబిన్ (రక్తహీనత సంకేతం) మరియు విటమిన్ డి లోపాన్ని సూచిస్తుంది. ఇతర పారామితులు సాధారణంగా ఉన్నాయి.',
+      suggestions: 'ఐరన్ అధికంగా ఉండే ఆహారాలు (పాలకూర, పప్పుధాన్యాలు) తీసుకోండి మరియు విటమిన్ డి3 సప్లిమెంట్ల కోసం వైద్యుడిని సంప్రదించండి.'
+    },
+    image: {
+      observation: 'చర్మ పరిశీలన: బెంయిన్ మెలనోసైటిక్ నెవస్ (సాధారణ పుట్టుమచ్చ)',
+      explanation: 'చర్మంపై ఉన్న మచ్చ సమరూప సరిహద్దులు, ఏకరీతి రంగు మరియు 6 మిమీ కంటే తక్కువ పరిమాణాన్ని కలిగి ఉంది. ఇది సాధారణ పుట్టుమచ్చను సూచిస్తుంది.',
+      warning: 'ఇది ప్రాథమిక దృశ్య సూచిక మాత్రమే. క్యాన్సర్ పరీక్షగా భావించవద్దు.',
+      suggestions: 'ప్రతినెలా ABCDE నియమాల ప్రకారం పుట్టుమచ్చను గమనించండి. ఏవైనా మార్పులు ఉంటే చర్మవ్యాధి నిపుణుడిని సంప్రదించండి.'
+    }
+  }
+};
+
+// Map translation helpers to fallback languages cleanly
+function getLocalMock(lang, section) {
+  const selectedLang = LOCAL_MOCKS[lang] ? lang : 'en';
+  return LOCAL_MOCKS[selectedLang][section];
+}
+
 export const aiService = {
   async analyzeSymptoms(symptoms, historyContext = []) {
+    const lang = localStorage.getItem('mediassist-lang') || 'en';
     try {
-      // If server is available, attempt real request
-      const res = await axios.post(`${API_BASE}/symptom/analyze`, { symptoms, context: historyContext });
+      const res = await axios.post(`${API_BASE}/symptom/analyze`, { symptoms, context: historyContext, lang });
       return res.data;
     } catch (err) {
       console.warn('Backend not responding, using local AI client simulation.', err.message);
-      // Premium Mock AI Engine simulation
       return new Promise((resolve) => {
         setTimeout(() => {
           const lower = symptoms.toLowerCase();
+          const mock = getLocalMock(lang, 'symptom');
           
-          // Emergency warning triggers
           if (
             lower.includes('chest pain') || lower.includes('heart') ||
             lower.includes('stroke') || lower.includes('breathing difficulty') ||
             lower.includes('bleeding') || lower.includes('unconscious')
           ) {
-            resolve({
-              isEmergency: true,
-              severity: 'critical',
-              condition: 'Potential Cardiovascular / Acute Distress',
-              explanation: 'Based on the red-flag symptoms provided, you might be experiencing a life-threatening medical emergency. Highly critical condition.',
-              followUp: 'Are you feeling lightheaded, experiencing radiating pain down your arm, or having severe shortness of breath?',
-              suggestions: 'Please do not wait. Call 911 or your local emergency response team right now.'
-            });
+            resolve(mock.emergency);
             return;
           }
 
           if (lower.includes('cough') || lower.includes('fever') || lower.includes('flu')) {
-            resolve({
-              isEmergency: false,
-              severity: 'low',
-              condition: 'Common Viral Upper Respiratory Tract Infection',
-              explanation: 'Symptoms align closely with common seasonal viral infections such as a cold or mild influenza.',
-              followUp: 'Do you have a persistent high fever above 101°F, sore throat, or body aches?',
-              suggestions: 'Rest, hydrate, and monitor your temperature. Over-the-counter flu aids can support symptom relief. If fever persists, contact a clinic.'
-            });
+            resolve(mock.cold);
           } else if (lower.includes('headache') || lower.includes('migraine')) {
-            resolve({
-              isEmergency: false,
-              severity: 'medium',
-              condition: 'Tension Headache or Early Migraine onset',
-              explanation: 'Moderate localized head pressure typical of tension or migraine headaches.',
-              followUp: 'Is the headache accompanied by visual disturbances, nausea, or sensitivity to light?',
-              suggestions: 'Rest in a quiet, dark room, keep hydrated. Consider standard pain relief. Seek immediate care if accompanied by sudden numbness or speech changes.'
-            });
+            resolve(mock.headache);
           } else {
-            resolve({
-              isEmergency: false,
-              severity: 'medium',
-              condition: 'General Symptomatic Presentation',
-              explanation: 'Symptoms are noted. A general systemic response has been generated.',
-              followUp: 'Could you elaborate on when these symptoms started and if they occur at specific times?',
-              suggestions: 'Maintain a symptom log, get adequate rest, and schedule a professional general practitioner checkup.'
-            });
+            resolve(mock.general);
           }
         }, 1500);
       });
@@ -117,9 +192,11 @@ export const aiService = {
   },
 
   async analyzeReport(file) {
+    const lang = localStorage.getItem('mediassist-lang') || 'en';
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('lang', lang);
       const res = await axios.post(`${API_BASE}/report/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -128,17 +205,18 @@ export const aiService = {
       console.warn('Backend not responding, using report mock parser.', err.message);
       return new Promise((resolve) => {
         setTimeout(() => {
+          const mock = getLocalMock(lang, 'report');
           resolve({
             reportName: file.name,
-            extractedSummary: 'Complete Blood Count (CBC) Panel Analysis',
+            extractedSummary: mock.extractedSummary,
             values: [
               { parameter: 'Hemoglobin', value: '11.2 g/dL', normal: '12.0 - 15.5 g/dL', status: 'low' },
               { parameter: 'White Blood Cell Count', value: '6.5 x10^3/uL', normal: '4.5 - 11.0 x10^3/uL', status: 'normal' },
               { parameter: 'Platelets', value: '250 x10^3/uL', normal: '150 - 450 x10^3/uL', status: 'normal' },
               { parameter: 'Vitamin D', value: '18 ng/mL', normal: '30 - 100 ng/mL', status: 'deficient' }
             ],
-            explanation: 'The report indicates borderline low Hemoglobin (mild anemia marker) and Vitamin D deficiency. Other standard blood parameters including infection markers (WBC) are within normal boundaries.',
-            suggestions: 'Focus on consuming iron-rich foods (spinach, legumes) and discuss a vitamin D3 supplement with your primary physician.'
+            explanation: mock.explanation,
+            suggestions: mock.suggestions
           });
         }, 2000);
       });
@@ -146,9 +224,11 @@ export const aiService = {
   },
 
   async analyzeImage(file) {
+    const lang = localStorage.getItem('mediassist-lang') || 'en';
     try {
       const formData = new FormData();
       formData.append('image', file);
+      formData.append('lang', lang);
       const res = await axios.post(`${API_BASE}/image/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -157,13 +237,14 @@ export const aiService = {
       console.warn('Backend not responding, using image mock analyzer.', err.message);
       return new Promise((resolve) => {
         setTimeout(() => {
+          const mock = getLocalMock(lang, 'image');
           resolve({
             imageName: file.name,
             confidence: 84.5,
-            observation: 'Dermatological Observation: Benign Melanocytic Nevus (Common Mole)',
-            explanation: 'The uploaded skin lesion exhibits visual symmetry, clear regular borders, uniform coloration, and a diameter under 6mm. These traits typically correlate with standard benign skin moles.',
-            warning: 'This is a preliminary visual indicator only. Do not treat this as a final oncology evaluation.',
-            suggestions: 'Observe the mole using the ABCDE rule monthly. Check if it becomes asymmetrical, develops uneven borders, changes color, grows, or bleeds.'
+            observation: mock.observation,
+            explanation: mock.explanation,
+            warning: mock.warning,
+            suggestions: mock.suggestions
           });
         }, 2000);
       });
@@ -171,14 +252,15 @@ export const aiService = {
   },
 
   async chatMessage(message, chatHistory = []) {
+    const lang = localStorage.getItem('mediassist-lang') || 'en';
     try {
-      const res = await axios.post(`${API_BASE}/chat/message`, { message, history: chatHistory });
+      const res = await axios.post(`${API_BASE}/chat/message`, { message, history: chatHistory, lang });
       return res.data;
     } catch (err) {
       console.warn('Backend not responding, using dynamic AI simulation.', err.message);
       return new Promise((resolve) => {
         setTimeout(() => {
-          resolve({ text: generateLocalChatResponse(message) });
+          resolve({ text: generateLocalChatResponse(message, lang) });
         }, 1000);
       });
     }
@@ -186,119 +268,34 @@ export const aiService = {
 };
 
 // Dynamic local AI engine — keyword-matched rich medical advisor
-function generateLocalChatResponse(message) {
+function generateLocalChatResponse(message, lang) {
+  // If Telugu is selected, return a friendly response in Telugu
+  if (lang === 'te') {
+    return "నమస్కారం! నేను మీ AI ఆరోగ్య సహాయకుడిని. ప్రత్యామ్నాయంగా, మా సర్వర్ ఇప్పుడు ఆఫ్‌లైన్‌లో ఉంది. దయచేసి విటమిన్లు, పోషకాహారం, నిద్ర లేదా సాధారణ వ్యాయామాల గురించి అడగండి. \n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సమాచార సహాయకుడిని మాత్రమే, లైసెన్స్ పొందిన వైద్యుడిని కాను.*";
+  } else if (lang === 'hi') {
+    return "नमस्ते! मैं आपका AI स्वास्थ्य सहायक हूँ। वर्तमान में हमारा सर्वर ऑफ़लाइन है। कृपया पोषण, नींद या व्यायाम के बारे में पूछें। \n\n---\n*⚕️ अस्वीकरण: मैं केवल एक AI स्वास्थ्य सूचना सहायक हूँ, डॉक्टर नहीं।*";
+  }
+  
+  // Standard English responses
   const lower = message.toLowerCase();
   const parts = [];
-
-  const greetings = [
-    'Hello! I am your AI health companion. ',
-    'Hi there! Glad to assist you today. ',
-    'Greetings! Here to help with your health queries. '
-  ];
-  parts.push(greetings[Math.floor(Math.random() * greetings.length)]);
-
+  
+  parts.push("Hello! I am your AI health companion (Local Simulation Mode). ");
+  
   let matched = false;
-
-  if (lower.includes('diet') || lower.includes('nutrition') || lower.includes('food') || lower.includes('eat') || lower.includes('weight')) {
+  if (lower.includes('diet') || lower.includes('nutrition') || lower.includes('food')) {
     matched = true;
-    parts.push('**Nutrition & Diet Guidance:**\n\n');
-    parts.push('• **Lean Proteins:** Choose skinless poultry, fish, legumes (lentils, chickpeas), or tofu as your primary protein sources.\n');
-    parts.push('• **Complex Carbs:** Opt for oats, brown rice, quinoa, and whole-grain bread over refined white options.\n');
-    parts.push('• **Healthy Fats:** Include avocados, olive oil, nuts, and seeds for heart health.\n');
-    parts.push('• **Vegetables & Fiber:** Fill half your plate with colorful veggies — spinach, broccoli, and carrots are excellent choices.\n');
-    parts.push('• **Hydration:** Aim for 2–3 liters of water daily. Limit sugary drinks and processed foods.\n\n');
-    parts.push('A registered dietitian can create a personalized plan tailored to your metabolism and health goals.');
+    parts.push("\n• **Nutrition Guidelines:** Opt for lean proteins, complex carbs (quinoa, brown rice), and fresh vegetables. Stay hydrated.");
   }
-
-  if (lower.includes('sleep') || lower.includes('insomnia') || lower.includes('tired') || lower.includes('rest') || lower.includes('night')) {
-    if (matched) parts.push('\n\n---\n\n');
+  if (lower.includes('sleep') || lower.includes('insomnia')) {
     matched = true;
-    parts.push('**Sleep Hygiene Tips:**\n\n');
-    parts.push('• **Consistent Schedule:** Sleep and wake at the same time daily — even on weekends — to stabilize your circadian rhythm.\n');
-    parts.push('• **Bedroom Environment:** Keep the room cool (~18°C / 65°F), dark, and quiet. Use blackout curtains or white noise if needed.\n');
-    parts.push('• **Screen-Free Wind Down:** Avoid screens 45–60 minutes before bed. Blue light suppresses melatonin production.\n');
-    parts.push('• **Avoid Late Stimulants:** Limit caffeine after 2 PM and avoid heavy meals or intense exercise close to bedtime.\n');
-    parts.push('• **Relaxation Techniques:** Try progressive muscle relaxation, deep breathing, or light reading before sleep.');
+    parts.push("\n• **Sleep Hygiene:** Build a consistent sleeping schedule. Avoid screen time for at least 45 minutes before sleep.");
   }
-
-  if (lower.includes('exercise') || lower.includes('workout') || lower.includes('gym') || lower.includes('run') || lower.includes('cardio') || lower.includes('fitness')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('**Exercise & Fitness Guidance:**\n\n');
-    parts.push('• **Weekly Goal:** WHO recommends at least **150 minutes** of moderate aerobic activity (e.g. brisk walking, cycling) per week.\n');
-    parts.push('• **Strength Training:** Include resistance exercises for all major muscle groups at least **2 days per week**.\n');
-    parts.push('• **Warm-Up & Cool-Down:** Always start with 5–10 minutes of light movement and end with stretching to prevent injury.\n');
-    parts.push('• **Progression:** Start slowly and gradually increase intensity — sudden overexertion leads to muscle strain.\n\n');
-    parts.push('⚠️ Consult a doctor before starting any new high-intensity exercise regimen, especially if you have existing conditions.');
-  }
-
-  if (lower.includes('paracetamol') || lower.includes('ibuprofen') || lower.includes('aspirin') || lower.includes('medicine') || lower.includes('medication') || lower.includes('drug') || lower.includes('tablet') || lower.includes('pill')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('**Medication Information:**\n\n');
-    parts.push('• **Paracetamol (Acetaminophen / Crocin):** Safe for fever and mild pain relief. However, the daily maximum (4000 mg for adults) must **never** be exceeded — overuse causes liver damage.\n');
-    parts.push('• **Ibuprofen (Brufen / Combiflam):** Anti-inflammatory; best taken **with food** to protect the stomach lining. Avoid if you have ulcers, kidney problems, or are pregnant.\n');
-    parts.push('• **Aspirin:** Commonly used for pain and as a blood thinner. Not recommended for children under 16 due to risk of Reye\'s syndrome.\n\n');
-    parts.push('⚠️ **IMPORTANT:** Always consult a pharmacist or doctor before starting, stopping, or changing any medication dosage.');
-  }
-
-  if (lower.includes('stress') || lower.includes('anxiety') || lower.includes('mental') || lower.includes('depress') || lower.includes('worry') || lower.includes('sad') || lower.includes('relax')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('**Mental Well-being & Stress Management:**\n\n');
-    parts.push('• **Mindfulness Practice:** Even 5–10 minutes of daily meditation or deep breathing (4-7-8 technique) significantly lowers cortisol levels.\n');
-    parts.push('• **Physical Activity:** Regular exercise is one of the most powerful natural antidepressants — it releases endorphins and improves mood.\n');
-    parts.push('• **Social Connection:** Maintaining relationships and talking to trusted friends or family reduces feelings of isolation.\n');
-    parts.push('• **Professional Help:** If anxiety or low mood persists for more than 2 weeks and impacts daily life, please reach out to a licensed therapist or counselor.\n\n');
-    parts.push('You are not alone — seeking help is a sign of strength, not weakness.');
-  }
-
-  if (lower.includes('vitamin') || lower.includes('supplement') || lower.includes('calcium') || lower.includes('iron') || lower.includes('b12') || lower.includes('deficien')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('**Vitamins & Supplements:**\n\n');
-    parts.push('• **Vitamin D3:** Essential for bone density and immune function. Found in fatty fish, fortified milk, and sunlight exposure. Deficiency is extremely common.\n');
-    parts.push('• **Vitamin B12:** Critical for nerve health and red blood cell production. Found mainly in animal products — vegetarians/vegans often need supplements.\n');
-    parts.push('• **Iron:** Key for oxygen transport. Take alongside Vitamin C for better absorption. Avoid taking with calcium-rich foods or tea.\n');
-    parts.push('• **Calcium & Magnesium:** Important for bone, muscle and nerve health. Found in dairy, leafy greens, and nuts.\n\n');
-    parts.push('Always run a blood panel before starting high-dose supplements to avoid toxicity and unnecessary spending.');
-  }
-
-  if (lower.includes('cough') || lower.includes('cold') || lower.includes('fever') || lower.includes('flu') || lower.includes('throat') || lower.includes('congestion')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('**Cold, Cough & Fever Care:**\n\n');
-    parts.push('• **Stay Hydrated:** Warm fluids — herbal teas, broths, and honey-lemon water — soothe the throat and help break up mucus.\n');
-    parts.push('• **Rest:** Allow your immune system the energy it needs to fight infection by getting adequate sleep.\n');
-    parts.push('• **Steam Inhalation:** Helps clear nasal congestion and eases breathing.\n');
-    parts.push('• **Salt Gargling:** A warm saline gargle (¼ tsp salt in warm water) reduces throat inflammation.\n\n');
-    parts.push('🚨 Seek immediate care if fever exceeds **102°F (38.9°C)** for more than 48 hours, or if breathing becomes difficult.');
-  }
-
-  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey') || lower.includes('help') || lower.includes('what can you')) {
-    if (matched) parts.push('\n\n---\n\n');
-    matched = true;
-    parts.push('I am your clinical AI health assistant. I can provide detailed guidance on:\n\n');
-    parts.push('• **Nutrition & Diet** – balanced eating, weight management, food tips\n');
-    parts.push('• **Sleep Hygiene** – overcoming insomnia, building better routines\n');
-    parts.push('• **Exercise & Fitness** – cardio schedules, strength tips, injury prevention\n');
-    parts.push('• **Medications** – common OTC drug info, dosage warnings\n');
-    parts.push('• **Mental Health** – stress management, anxiety coping strategies\n');
-    parts.push('• **Vitamins & Supplements** – deficiency guidance, what to take and when\n\n');
-    parts.push('Ask me anything about the above topics!');
-  }
-
+  
   if (!matched) {
-    parts.push('I am here to help you with health and wellness questions. Could you clarify which of these you are asking about?\n\n');
-    parts.push('**1. Nutrition & Diet** (e.g. foods rich in Vitamin D)\n');
-    parts.push('**2. Sleep Hygiene** (e.g. how to sleep better)\n');
-    parts.push('**3. Exercise** (e.g. beginner cardio routine)\n');
-    parts.push('**4. Medications** (e.g. paracetamol precautions)\n');
-    parts.push('**5. Mental Well-being** (e.g. managing stress)\n\n');
-    parts.push('Please specify and I will provide detailed educational guidance!');
+    parts.push("\nHow can I help you today? You can ask about diet, nutrition, sleep hygiene, or basic exercises.");
   }
-
-  parts.push('\n\n---\n*⚕️ Disclaimer: I am an AI health information assistant, not a licensed medical doctor. For diagnosis, prescriptions, or urgent health concerns, please consult a qualified healthcare professional.*');
-
+  
+  parts.push('\n\n---\n*⚕️ Disclaimer: I am an AI health information assistant, not a licensed medical doctor.*');
   return parts.join('');
 }
