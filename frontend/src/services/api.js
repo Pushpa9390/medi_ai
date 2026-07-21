@@ -96,10 +96,45 @@ const LOCAL_MOCKS = {
       suggestions: 'Focus on consuming iron-rich foods (spinach, legumes) and discuss a vitamin D3 supplement with your primary physician.'
     },
     image: {
-      observation: 'Dermatological Observation: Benign Melanocytic Nevus (Common Mole)',
-      explanation: 'The uploaded skin lesion exhibits visual symmetry, clear regular borders, uniform coloration, and a diameter under 6mm. These traits typically correlate with standard benign skin moles.',
-      warning: 'This is a preliminary visual indicator only. Do not treat this as a final oncology evaluation.',
-      suggestions: 'Observe the mole using the ABCDE rule monthly. Check if it becomes asymmetrical, develops uneven borders, changes color, grows, or bleeds.'
+      observation: 'Medical Visual Diagnostic Review: Focal Tissue Variance Detected',
+      explanation: 'The uploaded medical image has been visually evaluated. Symmetrical structural patterns are present with localized mild density variance.',
+      warning: 'This is an AI visual indicator only, not a final oncological or radiological diagnosis.',
+      suggestions: 'Schedule a clinical consultation with a medical specialist for definitive physical evaluation.',
+      confidence: 89.5,
+      riskLevel: 'Medium',
+      doctorObservation: {
+        imageType: 'Radiological / Dermatological Scan',
+        bodyPart: 'Target Visual Field',
+        visibleStructures: 'Clear tissue borders and visible cellular outlines',
+        normalFindings: 'Surrounding anatomical structures display expected density and symmetry',
+        abnormalFindings: 'Focal area of mild density or pigmentation variance observed',
+        locationOfAbnormalities: 'Central-lower region of interest'
+      },
+      clinicalAssessment: {
+        possibleCondition: 'Inflammatory or Benign Tissue Pattern',
+        confidence: 89.5,
+        severityLevel: 'Moderate',
+        affectedArea: 'Target scan quadrant',
+        riskCategory: 'Medium Risk'
+      },
+      doctorExplanation: 'The scan shows minor tissue variance that warrants routine medical observation. It does not confirm an active pathology. A physician will review your clinical history alongside this scan.',
+      recommendedNextSteps: {
+        specialist: 'General Physician / Clinical Specialist',
+        suggestedEvaluation: 'In-person clinical examination & palpation',
+        diagnosticTests: ['Targeted Follow-up Imaging', 'Laboratory Blood Biomarker Panel'],
+        followUpSuggestions: 'Re-assess with a licensed specialist within 7 to 10 days.'
+      },
+      generalTreatmentGuidance: {
+        rest: 'Ensure 7 to 8 hours of restorative sleep daily.',
+        hydration: 'Maintain adequate fluid intake of 2.5–3 liters per day.',
+        diet: 'Eat balanced meals rich in antioxidants, leafy greens, and lean protein.',
+        lifestyle: 'Avoid physical trauma or unverified home remedies on the affected area.',
+        recoveryMonitoring: 'Keep a daily log of any visual changes, pain, or discomfort.'
+      },
+      emergencyAssessment: {
+        emergencyRisk: 'Medium',
+        urgentAdvice: 'Seek immediate emergency attention if you develop acute severe pain, fever over 102°F, or sudden respiratory distress.'
+      }
     }
   },
   te: {
@@ -143,10 +178,45 @@ const LOCAL_MOCKS = {
       suggestions: 'ఐరన్ అధికంగా ఉండే ఆహారాలు (పాలకూర, పప్పుధాన్యాలు) తీసుకోండి మరియు విటమిన్ డి3 సప్లిమెంట్ల కోసం వైద్యుడిని సంప్రదించండి.'
     },
     image: {
-      observation: 'చర్మ పరిశీలన: బెంయిన్ మెలనోసైటిక్ నెవస్ (సాధారణ పుట్టుమచ్చ)',
-      explanation: 'చర్మంపై ఉన్న మచ్చ సమరూప సరిహద్దులు, ఏకరీతి రంగు మరియు 6 మిమీ కంటే తక్కువ పరిమాణాన్ని కలిగి ఉంది. ఇది సాధారణ పుట్టుమచ్చను సూచిస్తుంది.',
-      warning: 'ఇది ప్రాథమిక దృశ్య సూచిక మాత్రమే. క్యాన్సర్ పరీక్షగా భావించవద్దు.',
-      suggestions: 'ప్రతినెలా ABCDE నియమాల ప్రకారం పుట్టుమచ్చను గమనించండి. ఏవైనా మార్పులు ఉంటే చర్మవ్యాధి నిపుణుడిని సంప్రదించండి.'
+      observation: 'వైద్య విజువల్ పరిశీలన: కణజాల మార్పులు గమనించబడ్డాయి',
+      explanation: 'అప్‌లోడ్ చేసిన స్కాన్ సరిహద్దులు సమరూపంగా ఉన్నాయి, ప్రాథమిక మార్పులు కనిపించాయి.',
+      warning: 'ఇది కేవలం AI దృశ్య సూచిక మాత్రమే. అంకాలాజికల్ లేదా రేడియోలాజికల్ పరీక్ష కావు.',
+      suggestions: 'ఖచ్చితమైన పరీక్ష కోసం సంబంధిత నిపుణుడిని కలవండి.',
+      confidence: 89.5,
+      riskLevel: 'Medium',
+      doctorObservation: {
+        imageType: 'రేడియోలాజికల్ / డెర్మటోలాజికల్ స్కాన్',
+        bodyPart: 'విశ్లేషించిన శరీర భాగం',
+        visibleStructures: 'కణజాల అమరిక మరియు సరిహద్దులు స్పష్టంగా ఉన్నాయి',
+        normalFindings: 'చుట్టుపక్కల అవయవాలు సాధారణంగా ఉన్నాయి',
+        abnormalFindings: 'కేంద్రీకృత ప్రాంతంలో చిన్న మార్పులు కనిపించాయి',
+        locationOfAbnormalities: 'విశ్లేషణ ప్రధాన కేంద్ర స్థానం'
+      },
+      clinicalAssessment: {
+        possibleCondition: 'ఇన్ఫ్లమేటరీ లేదా సాధారణ కణజాల మార్పులు',
+        confidence: 89.5,
+        severityLevel: 'మోస్తరు',
+        affectedArea: 'విశ్లేషించిన ప్రాంతం',
+        riskCategory: 'మధ్యస్థ ప్రమాదం'
+      },
+      doctorExplanation: 'ఈ చిత్రం కణజాలంలో చిన్న మార్పులను చూపుతుంది. ఇది రోగాన్ని ధృవీకరించదు. వైద్యుడు మీ లక్షణాలను పరిశీలించి నిర్ణయం తీసుకుంటారు.',
+      recommendedNextSteps: {
+        specialist: 'జనరల్ ఫిజీషియన్ / స్పెషలిస్ట్ డాక్టర్',
+        suggestedEvaluation: 'వైద్యుడి ప్రత్యక్ష క్లినికల్ పరిశీలన',
+        diagnosticTests: ['ఫాలో-అప్ రక్త పరీక్షలు', 'అవసరమైతే రేడియోలాజికల్ స్కాన్'],
+        followUpSuggestions: '7-10 రోజులలో వైద్యుడిని కలవండి.'
+      },
+      generalTreatmentGuidance: {
+        rest: 'రోజుకు 7-8 గంటల తగినంత విశ్రాంతి పొందండి.',
+        hydration: 'రోజువారీ 2.5-3 లీటర్ల ద్రవాలు తాగండి.',
+        diet: 'పోషకాహారం మరియు తాజా పండ్లు తీసుకోండి.',
+        lifestyle: 'శరీరానికి అధిక శ్రమ ఇవ్వవద్దు.',
+        recoveryMonitoring: 'లక్షణాలలో మార్పులను క్రమం తప్పకుండా గమనించండి.'
+      },
+      emergencyAssessment: {
+        emergencyRisk: 'Medium',
+        urgentAdvice: 'తీవ్రమైన నొప్పి లేదా శ్వాస ఇబ్బంది ఉంటే వెంటనే అత్యవసర వైద్య సహాయం పొందండి.'
+      }
     }
   }
 };
@@ -240,11 +310,18 @@ export const aiService = {
           const mock = getLocalMock(lang, 'image');
           resolve({
             imageName: file.name,
-            confidence: 84.5,
+            confidence: mock.confidence || 89.5,
             observation: mock.observation,
             explanation: mock.explanation,
             warning: mock.warning,
-            suggestions: mock.suggestions
+            suggestions: mock.suggestions,
+            riskLevel: mock.riskLevel,
+            doctorObservation: mock.doctorObservation,
+            clinicalAssessment: mock.clinicalAssessment,
+            doctorExplanation: mock.doctorExplanation,
+            recommendedNextSteps: mock.recommendedNextSteps,
+            generalTreatmentGuidance: mock.generalTreatmentGuidance,
+            emergencyAssessment: mock.emergencyAssessment
           });
         }, 2000);
       });
@@ -269,33 +346,82 @@ export const aiService = {
 
 // Dynamic local AI engine — keyword-matched rich medical advisor
 function generateLocalChatResponse(message, lang) {
-  // If Telugu is selected, return a friendly response in Telugu
-  if (lang === 'te') {
-    return "నమస్కారం! నేను మీ AI ఆరోగ్య సహాయకుడిని. ప్రత్యామ్నాయంగా, మా సర్వర్ ఇప్పుడు ఆఫ్‌లైన్‌లో ఉంది. దయచేసి విటమిన్లు, పోషకాహారం, నిద్ర లేదా సాధారణ వ్యాయామాల గురించి అడగండి. \n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సమాచార సహాయకుడిని మాత్రమే, లైసెన్స్ పొందిన వైద్యుడిని కాను.*";
-  } else if (lang === 'hi') {
-    return "नमस्ते! मैं आपका AI स्वास्थ्य सहायक हूँ। वर्तमान में हमारा सर्वर ऑफ़लाइन है। कृपया पोषण, नींद या व्यायाम के बारे में पूछें। \n\n---\n*⚕️ अस्वीकरण: मैं केवल एक AI स्वास्थ्य सूचना सहायक हूँ, डॉक्टर नहीं।*";
-  }
-  
-  // Standard English responses
   const lower = message.toLowerCase();
-  const parts = [];
-  
-  parts.push("Hello! I am your AI health companion (Local Simulation Mode). ");
-  
+
+  // Telugu
+  if (lang === 'te') {
+    if (lower.includes('ఆహార') || lower.includes('పోషణ') || lower.includes('diet') || lower.includes('nutrition') || lower.includes('food')) {
+      return "నమస్కారం! పోషకాహార సూచనలు:\n\n• **సమతుల్య ఆహారం**: పప్పుధాన్యాలు, ఆకుకూరలు, మరియు తాజా పండ్లను రోజువారీ ఆహారంలో చేర్చుకోండి.\n• **నీరు**: ప్రతిరోజూ కనీసం 2-3 లీటర్ల నీరు త్రాగండి.\n• **తగ్గించాల్సినవి**: అధిక చక్కెర మరియు వేయించిన పదార్థాలను పరిమితం చేయండి.\n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సహాయకుడిని మాత్రమే, లైసెన్స్ పొందిన వైద్యుడిని కాను.*";
+    }
+    if (lower.includes('నిద్ర') || lower.includes('sleep') || lower.includes('insomnia')) {
+      return "మంచి నిద్ర కోసం సూచనలు:\n\n• **సమయపాలన**: ప్రతిరోజూ ఒకే సమయానికి నిద్రపోవడం మరియు మేల్కొనడం అలవాటు చేసుకోండి.\n• **స్క్రీన్ టైమ్**: నిద్రపోవడానికి 45 నిమిషాల ముందు ఫోన్ లేదా టీవీ వాడకండి.\n• **ప్రశాంతత**: గదిని చీకటిగా మరియు ప్రశాంతంగా ఉంచుకోండి.\n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సహాయకుడిని మాత్రమే.*";
+    }
+    if (lower.includes('జ్వరం') || lower.includes('జలుబు') || lower.includes('దగ్గు') || lower.includes('తలనొప్పి') || lower.includes('fever') || lower.includes('cough') || lower.includes('headache')) {
+      return "లక్షణాల నిర్వహణ సహాయం:\n\n• **విశ్రాంతి**: తగినంత విశ్రాంతి తీసుకోండి మరియు ద్రవాహారం ఎక్కువ తీసుకోండి.\n• **పర్యవేక్షణ**: శరీర ఉష్ణోగ్రతను క్రమం తప్పకుండా నమోదు చేయండి.\n• **వైద్య సంప్రదింపులు**: జ్వరం 101°F కంటే ఎక్కువ ఉంటే లేదా 3 రోజుల కంటే ఎక్కువ ఉంటే వెంటనే డాక్టర్‌ను కలవండి.\n\n---\n*⚕️ నిరాకరణ: తీవ్రమైన లక్షణాలకు వైద్య సహాయం తప్పనిసరి.*";
+    }
+    return "నమస్కారం! నేను మీ AI ఆరోగ్య సహాయకుడిని (ఆఫ్‌లైన్ మోడ్). మీరు ఆహారం, నిద్ర, వ్యాయామం లేదా సాధారణ ఔషధాల గురించి అడగవచ్చు.\n\n---\n*⚕️ నిరాకరణ: నేను AI ఆరోగ్య సమాచార సహాయకుడిని మాత్రమే, లైసెన్స్ పొందిన వైద్యుడిని కాను.*";
+  }
+
+  // Hindi
+  if (lang === 'hi') {
+    if (lower.includes('आहार') || lower.includes('पोषण') || lower.includes('diet') || lower.includes('nutrition') || lower.includes('food')) {
+      return "नमस्ते! पोषण संबंधी निर्देश:\n\n• **संतुलित आहार**: हरी सब्जियां, दालें, और ताजे फलों को अपने आहार में शामिल करें।\n• **हाइड्रेशन**: रोजाना 2-3 लीटर पानी पिएं।\n• **परहेज**: अत्यधिक चीनी और प्रसंस्कृत भोजन से बचें।\n\n---\n*⚕️ अस्वीकरण: मैं केवल एक AI स्वास्थ्य सूचना सहायक हूँ, डॉक्टर नहीं।*";
+    }
+    if (lower.includes('नींद') || lower.includes('sleep') || lower.includes('insomnia')) {
+      return "अच्छी नींद के लिए टिप्स:\n\n• **नियमित दिनचर्या**: सोने और जागने का समय निश्चित करें।\n• **स्क्रीन टाइम**: सोने से 45 मिनट पहले मोबाइल/स्क्रीन का उपयोग बंद कर दें।\n\n---\n*⚕️ अस्वीकरण: मैं एक AI स्वास्थ्य सहायक हूँ।*";
+    }
+    if (lower.includes('बुखार') || lower.includes('सर्दी') || lower.includes('खांसी') || lower.includes('सिरदर्द') || lower.includes('fever') || lower.includes('cough') || lower.includes('headache')) {
+      return "लक्षण प्रबंधन सलाह:\n\n• **विश्राम**: पर्याप्त आराम करें और गुनगुना पानी पिएं।\n• **तापमान**: बुखार की स्थिति में तापमान ट्रैक करें। 101°F से अधिक होने पर डॉक्टर से संपर्क करें।\n\n---\n*⚕️ अस्वीकरण: गंभीर स्थिति में तुरंत डॉक्टर से परामर्श लें।*";
+    }
+    return "नमस्ते! मैं आपका AI स्वास्थ्य सहायक हूँ (ऑफ़लाइन मोड)। आप मुझसे पोषण, नींद, व्यायाम या दवाओं के बारे में पूछ सकते हैं।\n\n---\n*⚕️ अस्वीकरण: मैं केवल एक AI स्वास्थ्य सूचना सहायक हूँ, डॉक्टर नहीं।*";
+  }
+
+  // Tamil, Kannada, Malayalam short handles
+  if (lang === 'ta' || lang === 'kn' || lang === 'ml') {
+    return "Welcome! I am your AI health companion. Ask about diet, sleep hygiene, exercises, or general medication guidance.\n\n---\n*⚕️ Disclaimer: Educational assistant only, not a licensed physician.*";
+  }
+
+  // Standard English response builder
+  const parts = ["Hello! I am your AI health companion (MediAssist AI).\n\n"];
   let matched = false;
-  if (lower.includes('diet') || lower.includes('nutrition') || lower.includes('food')) {
-    matched = true;
-    parts.push("\n• **Nutrition Guidelines:** Opt for lean proteins, complex carbs (quinoa, brown rice), and fresh vegetables. Stay hydrated.");
+
+  // Emergency Red Flags
+  if (
+    lower.includes('chest pain') || lower.includes('heart attack') || lower.includes('stroke') ||
+    lower.includes('breathing difficulty') || lower.includes('unconscious') || lower.includes('bleeding')
+  ) {
+    return "🚨 **CRITICAL EMERGENCY WARNING**\n\nBased on the severe red-flag symptoms mentioned, you may be experiencing a life-threatening emergency.\n\n• **Immediate Action**: Please do not delay. Call 911 / 112 or contact nearest emergency paramedics immediately.\n• **Safety**: Sit in a comfortable position and unlock the door for emergency responders.\n\n---\n*⚕️ Disclaimer: Urgent emergency response needed.*";
   }
-  if (lower.includes('sleep') || lower.includes('insomnia')) {
+
+  if (lower.includes('diet') || lower.includes('nutrition') || lower.includes('food') || lower.includes('eat') || lower.includes('weight')) {
     matched = true;
-    parts.push("\n• **Sleep Hygiene:** Build a consistent sleeping schedule. Avoid screen time for at least 45 minutes before sleep.");
+    parts.push("• **Nutrition Guidelines:** Opt for lean proteins (poultry, legumes, tofu), complex carbohydrates (quinoa, oats, brown rice), and colorful vegetables. Limit processed sugars and intake 2-3 liters of water daily.\n");
   }
-  
+
+  if (lower.includes('sleep') || lower.includes('insomnia') || lower.includes('bed') || lower.includes('night') || lower.includes('tired')) {
+    matched = true;
+    parts.push("• **Sleep Hygiene:** Maintain a consistent sleeping schedule (7-9 hours daily). Turn off digital screens 45 minutes before bedtime and keep your bedroom cool and dark.\n");
+  }
+
+  if (lower.includes('fever') || lower.includes('cough') || lower.includes('cold') || lower.includes('headache') || lower.includes('flu') || lower.includes('symptom')) {
+    matched = true;
+    parts.push("• **Symptom Care:** Rest, stay hydrated with warm liquids, and monitor your body temperature. If fever exceeds 101°F (38.3°C) or persists over 3 days, seek clinical consultation.\n");
+  }
+
+  if (lower.includes('exercise') || lower.includes('workout') || lower.includes('gym') || lower.includes('fitness') || lower.includes('walk')) {
+    matched = true;
+    parts.push("• **Physical Fitness:** Aim for at least 150 minutes of moderate aerobic activity (e.g. brisk walking) weekly, combined with light strength exercises 2 days a week. Always warm up properly.\n");
+  }
+
+  if (lower.includes('paracetamol') || lower.includes('acetaminophen') || lower.includes('ibuprofen') || lower.includes('medicine') || lower.includes('drug') || lower.includes('pill')) {
+    matched = true;
+    parts.push("• **Medication Precautions:** Paracetamol is widely used for fever and mild pain. Do not exceed 4,000 mg daily for adults to prevent liver overload. Always take NSAIDs like Ibuprofen with food.\n");
+  }
+
   if (!matched) {
-    parts.push("\nHow can I help you today? You can ask about diet, nutrition, sleep hygiene, or basic exercises.");
+    parts.push("I am here to answer questions about health, nutrition, sleep hygiene, exercises, or general medication precautions. How can I assist you today?");
   }
-  
-  parts.push('\n\n---\n*⚕️ Disclaimer: I am an AI health information assistant, not a licensed medical doctor.*');
+
+  parts.push('\n\n---\n*⚕️ Disclaimer: I am an AI health information assistant, not a licensed medical doctor. For medical diagnoses or prescriptions, consult a physician.*');
   return parts.join('');
 }

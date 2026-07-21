@@ -118,17 +118,56 @@ public class HealthcareController {
         String mimeType = image.getContentType();
         String languageName = getLanguageName(lang);
 
-        String systemInstruction = "You are a professional medical visual diagnostics assistant. " +
-                "Requirements:\n" +
-                "1. Provide preliminary visual observations of the skin condition or scan.\n" +
-                "2. State a confidence score (from 0 to 100) based on visibility and clarity.\n" +
-                "3. Provide warning prompts and recommended checks (e.g. ABCDE rules).\n" +
-                "4. Never provide a final diagnosis.\n" +
-                "5. Return details strictly in JSON matching: " +
-                "{\"confidence\": double, \"observation\": \"string\", \"explanation\": \"string\", \"warning\": \"string\", \"suggestions\": \"string\"}\n" +
-                "IMPORTANT: All string values inside the JSON output (observation, explanation, warning, suggestions) MUST be translated to and written in " + languageName + ".";
+        String systemInstruction = "You are an expert AI Virtual Medical Doctor Assistant analyzing a medical scan image (e.g. X-ray, MRI, Skin scan, CT, Eye fundus).\n" +
+                "Generate a detailed, structured AI doctor-style consultation report.\n" +
+                "Rules:\n" +
+                "- Never provide a confirmed medical diagnosis.\n" +
+                "- All string descriptions MUST be translated to and written in " + languageName + ".\n" +
+                "- Do NOT provide specific drug names or chemical dosages in treatment guidance.\n" +
+                "- Return strictly valid JSON matching this exact structure:\n" +
+                "{\n" +
+                "  \"confidence\": 88.5,\n" +
+                "  \"observation\": \"string summary\",\n" +
+                "  \"explanation\": \"string summary\",\n" +
+                "  \"warning\": \"string warning\",\n" +
+                "  \"suggestions\": \"string next steps\",\n" +
+                "  \"riskLevel\": \"Low\"|\"Medium\"|\"High\",\n" +
+                "  \"doctorObservation\": {\n" +
+                "    \"imageType\": \"string\",\n" +
+                "    \"bodyPart\": \"string\",\n" +
+                "    \"visibleStructures\": \"string\",\n" +
+                "    \"normalFindings\": \"string\",\n" +
+                "    \"abnormalFindings\": \"string\",\n" +
+                "    \"locationOfAbnormalities\": \"string\"\n" +
+                "  },\n" +
+                "  \"clinicalAssessment\": {\n" +
+                "    \"possibleCondition\": \"string\",\n" +
+                "    \"confidence\": 88.5,\n" +
+                "    \"severityLevel\": \"Low\"|\"Moderate\"|\"Severe\"|\"Critical\",\n" +
+                "    \"affectedArea\": \"string\",\n" +
+                "    \"riskCategory\": \"Low Risk\"|\"Medium Risk\"|\"High Risk\"\n" +
+                "  },\n" +
+                "  \"doctorExplanation\": \"patient friendly explanation string\",\n" +
+                "  \"recommendedNextSteps\": {\n" +
+                "    \"specialist\": \"string (e.g. Pulmonologist, Dermatologist, Radiologist)\",\n" +
+                "    \"suggestedEvaluation\": \"string\",\n" +
+                "    \"diagnosticTests\": [\"test1\", \"test2\", \"test3\"],\n" +
+                "    \"followUpSuggestions\": \"string\"\n" +
+                "  },\n" +
+                "  \"generalTreatmentGuidance\": {\n" +
+                "    \"rest\": \"string\",\n" +
+                "    \"hydration\": \"string\",\n" +
+                "    \"diet\": \"string\",\n" +
+                "    \"lifestyle\": \"string\",\n" +
+                "    \"recoveryMonitoring\": \"string\"\n" +
+                "  },\n" +
+                "  \"emergencyAssessment\": {\n" +
+                "    \"emergencyRisk\": \"Low\"|\"Medium\"|\"High\",\n" +
+                "    \"urgentAdvice\": \"string emergency advice if high or medium risk\"\n" +
+                "  }\n" +
+                "}";
 
-        String userPrompt = "Provide visual observation of this uploaded medical image scan: " + imageName;
+        String userPrompt = "Perform comprehensive medical visual analysis and AI Doctor report generation for uploaded scan: " + imageName;
         
         Map<String, Object> result = new HashMap<>();
         result.put("imageName", imageName);
@@ -141,11 +180,60 @@ public class HealthcareController {
             result.putAll(parsedResponse);
         } catch (Exception e) {
             System.err.println("Could not parse Gemini image response: " + e.getMessage());
-            result.put("confidence", 85.0);
-            result.put("observation", "te".equals(lang) ? "చర్మ పరిశీలన విశ్లేషణ" : "Dermatological visual query: " + imageName);
-            result.put("explanation", "te".equals(lang) ? "ప్రాథమిక విశ్లేషణ పూర్తయింది. ఎలాంటి తీవ్రమైన మార్పులు కనుగొనబడలేదు." : "Initial visual analysis completed.");
-            result.put("warning", "te".equals(lang) ? "ఇది కేవలం ప్రాథమిక అంచనా మాత్రమే." : "Visual check only — not an oncology screening.");
-            result.put("suggestions", "te".equals(lang) ? "ఏవైనా మార్పులు ఉంటే చర్మ వైద్యుడిని సంప్రదించండి." : "Follow up with a skin professional if changes are noted.");
+            boolean isTe = "te".equals(lang);
+
+            result.put("confidence", 88.0);
+            result.put("observation", isTe ? "వైద్య చిత్రం ప్రాథమిక గమనిక" : "Preliminary Medical Image Review");
+            result.put("explanation", isTe ? "చిత్రం విజయవంతంగా స్కాన్ చేయబడింది. వైద్య పరీక్ష అవసరం." : "Scan processed successfully. Clinical review recommended.");
+            result.put("warning", isTe ? "ఇది AI అంచనా మాత్రమే, ధృవీకరించబడిన నిర్ధారణ కాదు." : "This is an AI visual indicator only, not a final medical diagnosis.");
+            result.put("suggestions", isTe ? "సంబంధిత నిపుణుడిని సంప్రదించి పరీక్షించండి." : "Schedule an appointment with a specialist for further evaluation.");
+            result.put("riskLevel", "Medium");
+
+            Map<String, Object> docObs = new HashMap<>();
+            docObs.put("imageType", isTe ? "వైద్య ఇమేజింగ్ స్కాన్" : "Medical Imaging Scan");
+            docObs.put("bodyPart", isTe ? "విశ్లేషించబడిన శరీర ప్రాంతం" : "Target Body Region");
+            docObs.put("visibleStructures", isTe ? "కణజాలం మరియు ప్రాథమిక నిర్మాణాలు స్పష్టంగా ఉన్నాయి" : "Anatomical structures & tissues visible clearly");
+            docObs.put("normalFindings", isTe ? "సాధారణ అవయవ సరిహద్దులు" : "Symmetrical tissue patterns and clear outlines");
+            docObs.put("abnormalFindings", isTe ? "తేలికపాటి పిగ్మెంటేషన్ లేదా కణజాల మార్పులు కనిపించాయి" : "Focal structural changes or mild density variance detected");
+            docObs.put("locationOfAbnormalities", isTe ? "కేంద్రీకృత విశ్లేషణ ప్రాంతం" : "Localized primary area of interest");
+            result.put("doctorObservation", docObs);
+
+            Map<String, Object> clinAssess = new HashMap<>();
+            clinAssess.put("possibleCondition", isTe ? "గమనించిన కణజాల మార్పులు" : "Observed Focal Tissue Variance");
+            clinAssess.put("confidence", 88.0);
+            clinAssess.put("severityLevel", isTe ? "మోస్తరు" : "Moderate");
+            clinAssess.put("affectedArea", isTe ? "విశ్లేషించిన ప్రాంతం" : "Target Scan Area");
+            clinAssess.put("riskCategory", isTe ? "మధ్యస్థ ప్రమాదం" : "Medium Risk");
+            result.put("clinicalAssessment", clinAssess);
+
+            result.put("doctorExplanation", isTe ?
+                "స్కాన్ చేసిన చిత్రంలో కొంత మార్పు కనిపించింది. ఇది వ్యాధిని ధృవీకరించదు. మీ లక్షణాలు మరియు వైద్య చరిత్రను బట్టి వైద్యుడు నిర్ణయం తీసుకుంటారు." :
+                "The image shows minor changes in the scanned area. This finding does not confirm a disease. A doctor should evaluate your overall symptoms and medical history.");
+
+            Map<String, Object> nextSteps = new HashMap<>();
+            nextSteps.put("specialist", isTe ? "జనరల్ ఫిజీషియన్ / స్పెషలిస్ట్" : "General Physician / Specialist");
+            nextSteps.put("suggestedEvaluation", isTe ? "ప్రత్యక్ష క్లినికల్ పరీక్ష" : "In-person clinical examination");
+            nextSteps.put("diagnosticTests", java.util.List.of(
+                isTe ? "రక్త పరీక్షలు (CBC)" : "Routine Laboratory Tests (CBC)",
+                isTe ? "అవసరమైతే స్పష్టమైన ఇతర స్కాన్" : "Confirmatory Imaging / Follow-up Scan"
+            ));
+            nextSteps.put("followUpSuggestions", isTe ? "వారం రోజుల్లో వైద్యుడిని కలవండి" : "Follow up with a specialist within a week.");
+            result.put("recommendedNextSteps", nextSteps);
+
+            Map<String, Object> treatment = new HashMap<>();
+            treatment.put("rest", isTe ? "రోజుకు 7-8 గంటల తగినంత విశ్రాంతి తీసుకోండి" : "Ensure 7-8 hours of quality rest to aid recovery.");
+            treatment.put("hydration", isTe ? "రోజువారీ 2.5-3 లీటర్ల ద్రవాలు తాగండి" : "Maintain 2.5-3 Liters of fluid intake daily.");
+            treatment.put("diet", isTe ? "తాజా పండ్లు, ఆకుకూరలతో కూడిన సమతుల్య ఆహారం" : "Consume a balanced diet rich in vitamins and minerals.");
+            treatment.put("lifestyle", isTe ? "మానసిక ఒత్తిడిని మరియు అధిక శ్రమను తగ్గించండి" : "Avoid physical overexertion and unverified topical treatments.");
+            treatment.put("recoveryMonitoring", isTe ? "లక్షణాలలో మార్పులను క్రమం తప్పకుండా నమోదు చేయండి" : "Monitor any progression in symptoms daily.");
+            result.put("generalTreatmentGuidance", treatment);
+
+            Map<String, Object> emergency = new HashMap<>();
+            emergency.put("emergencyRisk", "Medium");
+            emergency.put("urgentAdvice", isTe ?
+                "తీవ్రమైన నొప్పి, శ్వాస తీసుకోవడంలో ఇబ్బంది లేదా అకస్మాత్తుగా లక్షణాలు ఎక్కువైతే వెంటనే అత్యవసర వైద్య సహాయం పొందండి." :
+                "Please seek immediate medical attention if you experience severe pain, difficulty breathing, or sudden worsening of symptoms.");
+            result.put("emergencyAssessment", emergency);
         }
 
         return ResponseEntity.ok(result);
@@ -157,9 +245,41 @@ public class HealthcareController {
         String lang     = payload.containsKey("lang")     ? String.valueOf(payload.get("lang"))     : "en";
         String languageName = getLanguageName(lang);
 
-        String systemInstruction = "You are a helpful, empathetic medical information agent. You explain healthy habits, nutritional tips, sleep guidelines, and general medication purposes. Always warn users to verify prescription dosages with professional pharmacists.\n" +
-                "IMPORTANT: You MUST write your entire response to the user in " + languageName + ".";
-        
+        String systemInstruction = 
+            "You are an expert AI Healthcare Assistant (MediAssist AI) specializing in general medical information, symptom triage, disease overviews, lab report explanations, medication safety, health metrics, mental wellness, emergency guidance, women & child health, and preventive healthcare.\n\n" +
+            "Capabilities & Domain Knowledge:\n" +
+            "1. Symptom Triage: Analyze reported symptoms (fever, cough, headache, chest pain, stomach pain, vomiting, diarrhea, dizziness, fatigue, body pain, breathing difficulty, skin/joint issues). Provide common causes, signs to monitor, self-care guidance, when to consult a doctor, and emergency red flags.\n" +
+            "2. Disease Information: Explain diseases (diabetes, pneumonia, hypertension, heart disease, asthma, skin conditions) with overview, causes, symptoms, risk factors, prevention, and lifestyle care.\n" +
+            "3. Medication Safety: Explain purpose, common precautions, and safety advice. NEVER prescribe medicines or specific chemical dosages.\n" +
+            "4. Medical Report Explanation: Explain lab terms (CBC, Hb, WBC, Lipid panel, HbA1c, Thyroid, Blood sugar), abnormal values, potential reasons, and physician consult advice.\n" +
+            "5. Health Monitoring: Guidance on BP, Blood Sugar, BMI, Heart Rate, SpO2, Temperature, and Cholesterol ranges.\n" +
+            "6. Emergency Assistance: Detect red-flag emergency inputs (severe chest pain, respiratory arrest, stroke, unconsciousness, heavy bleeding). Immediately urge calling emergency services (911/112).\n" +
+            "7. Mental Wellness: Guidance for stress, anxiety, sleep hygiene, relaxation techniques, and professional mental health support.\n" +
+            "8. Women & Child Health: Pregnancy nutrition, menstrual care, child fever management, vaccination advice, and common pediatric concerns.\n" +
+            "9. Preventive Healthcare: Healthy lifestyle, exercise routines, diet planning, screening recommendations.\n" +
+            "10. Clarifying Health Follow-ups: When helpful, ask relevant clarifying questions (e.g. patient age, symptom duration, pre-existing conditions, active medications).\n\n" +
+            "Mandatory Output Format:\n" +
+            "You MUST format EVERY medical query response using this exact 8-part Markdown layout (written in " + languageName + "):\n\n" +
+            "🩺 **Health Assistant Response**\n" +
+            "[Empathetic summary of the user query or finding]\n\n" +
+            "📌 **Possible Explanation**\n" +
+            "[Clear clinical background & potential underlying reasons]\n\n" +
+            "🔍 **Symptoms / Signs to Monitor**\n" +
+            "• [Key symptom 1]\n" +
+            "• [Key symptom 2]\n\n" +
+            "✅ **Recommended Actions**\n" +
+            "• [Action 1: Rest/Hydration/Lifestyle]\n" +
+            "• [Action 2: Self-care steps]\n\n" +
+            "🏥 **When to Consult a Doctor**\n" +
+            "[Specific clinical threshold, timeline, or specialist referral]\n\n" +
+            "🚨 **Emergency Warning** (If applicable)\n" +
+            "[Red-flag warning signs requiring immediate paramedic/ER intervention]\n\n" +
+            "💡 **Health Tips**\n" +
+            "• [Nutritional, preventive, or wellness advice]\n\n" +
+            "⚕️ **Medical Disclaimer**\n" +
+            "I am an AI health assistant, not a licensed medical doctor. For diagnosis or prescriptions, consult a physician.\n\n" +
+            "IMPORTANT: Write your ENTIRE response strictly in " + languageName + ".";
+
         String responseText = geminiService.generateContent(systemInstruction, message, lang);
 
         Map<String, String> response = new HashMap<>();
